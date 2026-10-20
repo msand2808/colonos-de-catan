@@ -6,10 +6,3 @@ partidas y jugar por turnos.
 ## Proyecto
 Busca explorar la metodología Scrum, con un equipo de desarrolladores
 organizado en Sprints y un Backlog gestionado mediante Github Projects.
-
-
-## Curent Sprint
-*Sprint 4 - Terminar funcionalidades y testeo de la aplicación*
-Terminar las funcionalidades menos críticas del juego y probar 
-partidas usando el frontend diseñado. Además de un despliegue 
-para su terminación.
