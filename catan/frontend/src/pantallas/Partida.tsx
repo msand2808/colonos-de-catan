@@ -38,6 +38,7 @@ import ElegirMonopolio from '../componentes/ElegirMonopolio';
 import FinPartida from '../componentes/FinPartida';
 import ProponerIntercambio, { type Propuesta } from '../componentes/ProponerIntercambio';
 import ResponderIntercambio, { type Respuesta } from '../componentes/ResponderIntercambio';
+import ConfirmarPasarTurno from '../componentes/ConfirmarPasarTurno';
 
 const recursosPrueba: Recursos = {
   madera: 2,
@@ -85,6 +86,7 @@ function Partida({ sala, onSolicitarConstruccion, onSalir }: Props) {
   const [resultadoDados, setResultadoDados] = useState<ResultadoDados | null>(null);
   const [lanzandoDados, setLanzandoDados] = useState(false);
   const [pasandoTurno, setPasandoTurno] = useState(false);
+  const [confirmandoPasarTurno, setConfirmandoPasarTurno] = useState(false);
   const [descarteEnEspera, setDescarteEnEspera] = useState<number | null>(null);
   const [moviendoLadron, setMoviendoLadron] = useState(false);
   const [compraEnEspera, setCompraEnEspera] = useState<number | null>(null);
@@ -461,6 +463,7 @@ function Partida({ sala, onSolicitarConstruccion, onSalir }: Props) {
   const puedeConstruir = enPreconstruccion || puedePasarTurno || colocandoCaminosGratis;
 
   function pasarTurno() {
+    setConfirmandoPasarTurno(false);
     if (!sala || !puedePasarTurno || pasandoTurno) return;
     setPasandoTurno(true);
     // El backend elige al siguiente jugador. No adelantamos el turno localmente.
@@ -783,10 +786,15 @@ function Partida({ sala, onSolicitarConstruccion, onSalir }: Props) {
             variant="contained"
             fullWidth
             disabled={!puedePasarTurno || pasandoTurno}
-            onClick={pasarTurno}
+            onClick={() => setConfirmandoPasarTurno(true)}
           >
             {pasandoTurno ? 'Pasando turno…' : 'Pasar turno'}
           </Button>
+          <ConfirmarPasarTurno
+            abierto={confirmandoPasarTurno && puedePasarTurno && !pasandoTurno}
+            onCancelar={() => setConfirmandoPasarTurno(false)}
+            onConfirmar={pasarTurno}
+          />
         </div>
         <div className="existencias">
           <Existencias
