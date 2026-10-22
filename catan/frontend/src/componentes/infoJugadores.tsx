@@ -5,9 +5,11 @@ interface Props {
   jugadores: Jugadores;
   ordenJugadores: string[];
   miSessionId: string;
+  // sessionId del que tiene el ejercito mas grande. Vacio si todavia nadie.
+  ejercitoMasGrande: string;
 }
 
-function InfoJugadores({ jugadores, ordenJugadores, miSessionId }: Props) {
+function InfoJugadores({ jugadores, ordenJugadores, miSessionId, ejercitoMasGrande }: Props) {
   const lista = ordenJugadores.length ? ordenJugadores : Object.keys(jugadores);
 
   return (
@@ -17,6 +19,7 @@ function InfoJugadores({ jugadores, ordenJugadores, miSessionId }: Props) {
         if (!j) return null;
 
         const yo = id === miSessionId;
+        const tieneEjercito = ejercitoMasGrande !== '' && id === ejercitoMasGrande;
 
         return (
           <div
@@ -34,8 +37,13 @@ function InfoJugadores({ jugadores, ordenJugadores, miSessionId }: Props) {
               <span title="Cartas de desarrollo en la mano, usables mas inusables">
                 {totalCartas(j)} cartas
               </span>
-              <span title="Caballeros jugados. Decide el ejercito mas grande">
-                {j.caballerosJugados} caballeros
+              <span
+                title={tieneEjercito
+                  ? 'Ejercito mas grande (+2 puntos)'
+                  : 'Caballeros jugados. Decide el ejercito mas grande'}
+                className={tieneEjercito ? 'text-warning fw-bold' : 'text-white'}
+              >
+                {tieneEjercito && '⚔ '}{j.caballerosJugados} caballeros
               </span>
               <span
                 title="Cartas de recurso en la mano"
