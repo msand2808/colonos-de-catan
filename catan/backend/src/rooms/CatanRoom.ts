@@ -1005,11 +1005,26 @@ export class CatanRoom extends Room {
         if (jugador.recursos.get(
           this.partida.ofertaIntercambio.recursoSolicitado
         ) < this.partida.ofertaIntercambio.cantidadSolicitada) {
+          // * Avisar al jugador por que no se pudo aceptar
+          client.send("error", {
+            mensajeError: "No tienes suficientes recursos para aceptar esta oferta"
+          })
+
           // * Automaticamente pasarlo a rechazo
           this.partida.ofertaIntercambio.registrarRespuesta(client.sessionId, -1);
+          //* Log de rechazo de la oferta
+          this.broadcast("log", {
+            jugador: this.jugadores.get(client.sessionId)?.nombre,
+            mensaje: " ha rechazado la oferta de intercambio"
+          })
+
           // * Verificar si todos rechazaron
           if (this.partida.ofertaIntercambio.todosRechazaron()) {
             this.partida.ofertaIntercambio.limpiarOferta();
+            this.broadcast("log", {
+              jugador: "Sistema: ",
+              mensaje: "Todos los jugadores han rechazado la oferta de intercambio"
+            });
           }
           return;
         }
