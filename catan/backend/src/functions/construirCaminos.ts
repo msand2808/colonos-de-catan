@@ -160,10 +160,11 @@ function comprobarCaminoPos0(
     const a2 = aristas.get(`${h + 1},${d},2`);
     const a3 = aristas.get(`${h + 1},${d},1`);
     const a4 = aristas.get(`${h + 1},${d - 1},2`);
-    if(a1 && a1.propietario === sessionId) return true;
-    if(a2 && a2.propietario === sessionId) return true;
-    if(a3 && a3.propietario === sessionId) return true;
-    if(a4 && a4.propietario === sessionId) return true;
+    // * Un camino no conecta si pasa por una construccion rival
+    if(a1 && a1.propietario === sessionId && !esRival(v1, sessionId)) return true;
+    if(a2 && a2.propietario === sessionId && !esRival(v2, sessionId)) return true;
+    if(a3 && a3.propietario === sessionId && !esRival(v2, sessionId)) return true;
+    if(a4 && a4.propietario === sessionId && !esRival(v1, sessionId)) return true;
     return false;
 }
 
@@ -185,10 +186,11 @@ function comprobarCaminoPos1(
     const a2 = aristas.get(`${h},${d},2`);
     const a3 = aristas.get(`${h - 1},${d},0`);
     const a4 = aristas.get(`${h + 1},${d - 1},2`);
-    if(a1 && a1.propietario === sessionId) return true;
-    if(a2 && a2.propietario === sessionId) return true;
-    if(a3 && a3.propietario === sessionId) return true;
-    if(a4 && a4.propietario === sessionId) return true;
+    // * Un camino no conecta si pasa por una construccion rival
+    if(a1 && a1.propietario === sessionId && !esRival(v1, sessionId)) return true;
+    if(a2 && a2.propietario === sessionId && !esRival(v2, sessionId)) return true;
+    if(a3 && a3.propietario === sessionId && !esRival(v2, sessionId)) return true;
+    if(a4 && a4.propietario === sessionId && !esRival(v1, sessionId)) return true;
     return false;
 }
 
@@ -210,9 +212,15 @@ function comprobarCaminoPos2(
     const a2 = aristas.get(`${h - 1},${d},0`);
     const a3 = aristas.get(`${h - 1},${d + 1},1`);
     const a4 = aristas.get(`${h - 1},${d + 1},0`);
-    if(a1 && a1.propietario === sessionId) return true;
-    if(a2 && a2.propietario === sessionId) return true;
-    if(a3 && a3.propietario === sessionId) return true;
-    if(a4 && a4.propietario === sessionId) return true;
+    // * Un camino no conecta si pasa por una construccion rival
+    if(a1 && a1.propietario === sessionId && !esRival(v1, sessionId)) return true;
+    if(a2 && a2.propietario === sessionId && !esRival(v1, sessionId)) return true;
+    if(a3 && a3.propietario === sessionId && !esRival(v2, sessionId)) return true;
+    if(a4 && a4.propietario === sessionId && !esRival(v2, sessionId)) return true;
     return false;
+}
+
+// * Verificar si el vertice tiene una construccion de otro jugador
+function esRival(vertice: Vertice, sessionId: string){
+    return vertice !== undefined && vertice.propietario !== "" && vertice.propietario !== sessionId;
 }
