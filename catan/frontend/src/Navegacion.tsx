@@ -9,6 +9,7 @@ import CrearSala, { type DatosNuevaSala } from "./pantallas/CrearSala/CrearSala"
 import Reconectando from "./pantallas/Reconectando/Reconectando";
 import SalaEspera, { type JugadorVista } from "./pantallas/SalaEspera/SalaEspera";
 import PartidaTablero from "./pantallas/Partida";
+import AvisoError, { type Aviso } from "./componentes/AvisoError";
 import { FASE_PARTIDA } from "./common/fases";
 import {
   actualizarToken,
@@ -82,6 +83,8 @@ function Navegacion() {
   const [origenCrear, setOrigenCrear] = useState<"elegir" | "lobby">("elegir");
   // Distingue "Salir" (voluntario) de una caída que no se pudo recuperar.
   const salidaVoluntaria = useRef(false);
+  // Último error del servidor que se muestra como aviso.
+  const [avisoError, setAvisoError] = useState<Aviso | null>(null);
 
   // La partida empieza cuando el backend deja de estar en LOBBY (lo cambia
   // msgIniciarPartida), así todos los clientes avanzan a la vez.
@@ -163,7 +166,7 @@ function Navegacion() {
     }
 
     function alRecibirError(err: { mensajeError: string }) {
-      alert(err.mensajeError);
+      setAvisoError({ id: Date.now(), mensaje: err.mensajeError });
     }
 
     sincronizarEstado(salaActual.state as unknown as EstadoDeSala);
@@ -285,22 +288,25 @@ function Navegacion() {
     );
   }
 
-  if (!partidaIniciada) {
-    return (
-      <SalaEspera
-        room={room}
-        infoSala={infoSala}
-        jugadores={jugadores}
-        maxJugadores={MAX_JUGADORES}
-        minJugadores={MIN_JUGADORES}
-        esCreador={esCreador}
-        onIniciarPartida={() => room.send("msgIniciarPartida")}
-        onSalir={salirDeSala}
-      />
-    );
-  }
-
-  return <PartidaTablero sala={room} onSalir={salirDeSala} />;
+  return (
+    <>
+      {partidaIniciada ? (
+        <PartidaTablero sala={room} onSalir={salirDeSala} />
+      ) : (
+        <SalaEspera
+          room={room}
+          infoSala={infoSala}
+          jugadores={jugadores}
+          maxJugadores={MAX_JUGADORES}
+          minJugadores={MIN_JUGADORES}
+          esCreador={esCreador}
+          onIniciarPartida={() => room.send("msgIniciarPartida")}
+          onSalir={salirDeSala}
+        />
+      )}
+      <AvisoError aviso={avisoError} onCerrar={() => setAvisoError(null)} />
+    </>
+  );
 }
 
 export default Navegacion;
