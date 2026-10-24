@@ -3,8 +3,7 @@ import { CatanState } from "../states/CatanState.js";
 import { Jugador } from "../schemas/Jugador.js";
 import { Desarrollo, FaseJuego, FasePartida, FasePreconstruccion } from "../common/enums.js";
 import { buscarHexagonos } from "../functions/buscarHexagonos.js";
-import { darRecursosJugador } from "../functions/darRecursosJugador.js";
-import { verticesDelHexagono } from "../functions/verticesDelHexagono.js";
+import { repartirRecursos } from "../functions/repartirRecursos.js";
 import { lanzarDados } from "../functions/lanzarDados.js";
 import { mezclar } from "../common/mezclar.js";
 import { siguienteTurno } from "../functions/siguienteTurno.js";
@@ -189,20 +188,14 @@ export class CatanRoom extends Room {
       //* Buscar los hexagonos con dicho numero resultado de la suma de los dados
       const hexagonosEncontrados = buscarHexagonos(this.tablero.hexagonos, suma);
 
-      //* Traer los vertices adyacentes para cada hexagono encontrado
-      hexagonosEncontrados.forEach((hexagono) => {
-        const vertices = verticesDelHexagono(this.tablero.vertices, hexagono);
-
-        //* Dar los recursos correspondientes en cada vertice encontrado
-        vertices.forEach((vertice) => {
-          darRecursosJugador(
-            hexagono,
-            vertice,
-            this.jugadores,
-            this.banca,
-            this.tablero.ladron);
-        })
-      })
+      //* Dar los recursos de todos los hexagonos a la vez, para saber si la banca alcanza
+      repartirRecursos(
+        hexagonosEncontrados,
+        this.tablero.vertices,
+        this.jugadores,
+        this.banca,
+        this.tablero.ladron
+      );
       this.partida.faseJuego = FaseJuego.ACCIONES;
     },
 
