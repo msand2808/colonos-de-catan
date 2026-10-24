@@ -957,22 +957,7 @@ export class CatanRoom extends Room {
 
       // ! Rechazo
       if (mensaje.respuesta === -1) {
-        this.partida.ofertaIntercambio.registrarRespuesta(client.sessionId, -1);
-        //* Log de rechazo de la oferta
-        this.broadcast("log", {
-          jugador: this.jugadores.get(client.sessionId)?.nombre,
-          mensaje: " ha rechazado la oferta de intercambio"
-        })
-
-         // * Verificar si todos rechazaron
-        if (this.partida.ofertaIntercambio.todosRechazaron()) {
-          this.partida.ofertaIntercambio.limpiarOferta();
-          this.broadcast("log", {
-            jugador: "Sistema: ",
-            mensaje: "Todos los jugadores han rechazado la oferta de intercambio"
-          });
-        }
-
+        this.rechazarOferta(client.sessionId);
         return;
       }
 
@@ -998,12 +983,13 @@ export class CatanRoom extends Room {
         if (jugador.recursos.get(
           this.partida.ofertaIntercambio.recursoSolicitado
         ) < this.partida.ofertaIntercambio.cantidadSolicitada) {
+          // * Avisar al jugador por que no se pudo aceptar
+          client.send("error", {
+            mensajeError: "No tienes suficientes recursos para aceptar esta oferta"
+          })
+
           // * Automaticamente pasarlo a rechazo
-          this.partida.ofertaIntercambio.registrarRespuesta(client.sessionId, -1);
-          // * Verificar si todos rechazaron
-          if (this.partida.ofertaIntercambio.todosRechazaron()) {
-            this.partida.ofertaIntercambio.limpiarOferta();
-          }
+          this.rechazarOferta(client.sessionId);
           return;
         }
 
@@ -1396,6 +1382,26 @@ export class CatanRoom extends Room {
     }
     
   };
+
+  //* Registrar el rechazo de un jugador a la oferta activa y cancelarla si todos rechazaron
+  rechazarOferta(sessionId: string) {
+    this.partida.ofertaIntercambio.registrarRespuesta(sessionId, -1);
+
+    //* Log de rechazo de la oferta
+    this.broadcast("log", {
+      jugador: this.jugadores.get(sessionId)?.nombre,
+      mensaje: " ha rechazado la oferta de intercambio"
+    })
+
+    // * Verificar si todos rechazaron
+    if (this.partida.ofertaIntercambio.todosRechazaron()) {
+      this.partida.ofertaIntercambio.limpiarOferta();
+      this.broadcast("log", {
+        jugador: "Sistema: ",
+        mensaje: "Todos los jugadores han rechazado la oferta de intercambio"
+      });
+    }
+  }
 
   onCreate(options: any) {
     console.log("room created!", this.roomId);
