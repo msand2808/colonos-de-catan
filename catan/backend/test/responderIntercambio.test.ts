@@ -1,6 +1,6 @@
 import assert from "node:assert";
-import { boot, ColyseusTestServer } from "@colyseus/testing";
-import appConfig from "../src/app.config.js";
+import { ColyseusTestServer } from "@colyseus/testing";
+import { servidorDePrueba } from "./servidorDePrueba.js";
 import { CatanRoom } from "../src/rooms/CatanRoom.js";
 import { FaseJuego, FasePartida } from "../src/common/enums.js";
 
@@ -9,8 +9,7 @@ type Log = { jugador: string, mensaje: string };
 describe("msgResponderIntercambio", () => {
     let colyseus: ColyseusTestServer;
 
-    before(async () => colyseus = await boot(appConfig));
-    after(async () => colyseus.shutdown());
+    before(async () => colyseus = await servidorDePrueba());
     beforeEach(async () => colyseus.cleanup());
 
     //* Sala en fase de acciones con una oferta de Ana: 1 madera por 1 trigo
