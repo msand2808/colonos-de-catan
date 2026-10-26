@@ -98,9 +98,10 @@ export function sacarJugador(
         : partida.ordenJugadores[partida.ordenJugadores.length - 1];
     }
 
-    //*Pasar el creador al siguiente jugador en el orden
+    //*Pasar el creador al siguiente humano en el orden (un bot nunca es anfitrion)
     if (partida.creador === sessionId) {
-        partida.creador = partida.ordenJugadores[0] ?? "";
+        partida.creador = partida.ordenJugadores
+            .find((id) => !jugadores.get(id)?.esBot) ?? "";
     }
 
     //* Si queda solo uno, gana de forma automatica
