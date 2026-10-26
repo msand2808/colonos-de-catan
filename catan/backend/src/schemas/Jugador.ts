@@ -14,11 +14,13 @@ export class Jugador extends Schema {
     @type({ map: "uint8" }) construccionesDisponibles = new MapSchema<number>();
     @type("string") ultimoAsentamiento: string;
     @type("uint8") caballerosJugados: number;
+    @type("boolean") esBot: boolean;
 
 
-    constructor(nombre: string = "") {
+    constructor(nombre: string = "", esBot: boolean = false) {
         super();
         this.nombre = nombre;
+        this.esBot = esBot;
         this.puntuacion = 0;
         this.puntosParaGanar = 10;
         this.ultimoAsentamiento = "";

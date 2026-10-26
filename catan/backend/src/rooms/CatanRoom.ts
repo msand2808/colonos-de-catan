@@ -317,6 +317,52 @@ export class CatanRoom extends Room {
       this.lock();
     },
 
+    msgAgregarBot: (client: Client) => {
+      const error = this.validarManejoDeBots(client);
+      if (error) {
+        client.send("error", { mensajeError: error });
+        return;
+      }
+
+      //* Humanos y bots cuentan para el cupo de la sala
+      if (this.jugadores.size >= this.maxClients) {
+        client.send("error", {
+          mensajeError: "La sala esta llena"
+        });
+        return;
+      }
+
+      //* Usar el numero mas bajo libre: "Bot 1", "Bot 2"...
+      let numero = 1;
+      while (this.jugadores.has(`bot-${numero}`)) numero++;
+      const id = `bot-${numero}`;
+
+      this.jugadores.set(id, new Jugador(`Bot ${numero}`, true));
+      this.partida.ordenJugadores.push(id);
+      this.actualizarCupo();
+    },
+
+    msgQuitarBot: (
+      client: Client,
+      mensaje: { sessionId: string }
+    ) => {
+      const error = this.validarManejoDeBots(client);
+      if (error) {
+        client.send("error", { mensajeError: error });
+        return;
+      }
+
+      //* Solo se pueden quitar bots, nunca a un humano
+      if (!this.jugadores.get(mensaje?.sessionId)?.esBot) {
+        client.send("error", {
+          mensajeError: "Ese jugador no es un bot"
+        });
+        return;
+      }
+
+      this.sacarDelLobby(mensaje.sessionId);
+    },
+
     msgPasarTurno: (client: Client) => {
       //* Verificar que la partida siga en curso
       if (this.partida.fase === FasePartida.FINALIZADA) {
@@ -1403,6 +1449,50 @@ export class CatanRoom extends Room {
     }
   }
 
+  //* Solo el anfitrion maneja los bots, y solo mientras se esta en el lobby
+  validarManejoDeBots(client: Client): string | null {
+    if (this.partida.creador !== client.sessionId) {
+      return "Solo el anfitrion puede agregar o quitar bots";
+    }
+    if (this.partida.fase !== FasePartida.LOBBY) {
+      return "La partida ya ha comenzado";
+    }
+    return null;
+  }
+
+  //* Saca a un jugador (humano o bot) antes de iniciar la partida. Si era el
+  //* anfitrion, pasa al siguiente humano en entrar: un bot nunca es anfitrion
+  sacarDelLobby(sessionId: string) {
+    this.jugadores.delete(sessionId);
+
+    const indice = this.partida.ordenJugadores.indexOf(sessionId);
+    if (indice !== -1) {
+      this.partida.ordenJugadores.splice(indice, 1);
+    }
+
+    if (this.partida.creador === sessionId) {
+      this.partida.creador = this.partida.ordenJugadores
+        .find((id) => !this.jugadores.get(id)?.esBot) ?? "";
+      this.setMetadata({
+        ...this.metadata,
+        anfitrion: this.jugadores.get(this.partida.creador)?.nombre ?? ""
+      });
+    }
+
+    this.actualizarCupo();
+  }
+
+  //* Los bots no son clientes, asi que Colyseus no los cuenta para llenar la
+  //* sala: se bloquea a mano cuando humanos + bots llegan al maximo
+  actualizarCupo() {
+    if (this.partida.fase !== FasePartida.LOBBY) return;
+    if (this.jugadores.size >= this.maxClients) {
+      this.lock();
+    } else {
+      this.unlock();
+    }
+  }
+
   onCreate(options: any) {
     console.log("room created!", this.roomId);
     //* si se ingresa codigo de acceso, se setea al atributo de codigo de acceso a la sala
@@ -1427,6 +1517,10 @@ export class CatanRoom extends Room {
         throw new Error("Codigo de acceso incorrecto");
       }
     }
+    //* Los bots tambien ocupan lugar
+    if (this.jugadores.size >= this.maxClients) {
+      throw new Error("La sala esta llena");
+    }
     console.log(`${client.sessionId} joined the room`);
 
     this.partida.ordenJugadores.push(client.sessionId);
@@ -1436,6 +1530,7 @@ export class CatanRoom extends Room {
     if (this.partida.creador == "") {
       this.partida.creador = client.sessionId;
     }
+    this.actualizarCupo();
   }
 
   onLeave(client: Client, code: CloseCode) {
@@ -1444,23 +1539,7 @@ export class CatanRoom extends Room {
 
     //* Primero revisamos si estamos en la fase de lobby
     if (this.partida.fase === FasePartida.LOBBY) {
-      //* Sacamos al jugador que salio
-      this.jugadores.delete(client.sessionId);
-
-      //* Borrar al jugador del orden de jugadores
-      const indice = this.partida.ordenJugadores.indexOf(client.sessionId);
-      if (indice !== -1) {
-        this.partida.ordenJugadores.splice(indice, 1);
-      }
-
-      //* Si se fue el creador, el siguiente en entrar pasa a ser el anfitrión
-      if (this.partida.creador === client.sessionId) {
-        this.partida.creador = this.partida.ordenJugadores[0] ?? "";
-        this.setMetadata({
-          ...this.metadata,
-          anfitrion: this.jugadores.get(this.partida.creador)?.nombre ?? ""
-        });
-      }
+      this.sacarDelLobby(client.sessionId);
       return;
     }
 
