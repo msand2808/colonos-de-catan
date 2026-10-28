@@ -67,7 +67,7 @@ export const NOMBRE_PIEZA: Record<string, string> = {
 
 /* el jugador
    La clave del mapa es el sessionId que Colyseus le asigna a cada cliente.
-   Los nueve campos son copia literal de backend/src/schemas/Jugador.ts. Lo
+   Los diez campos son copia literal de backend/src/schemas/Jugador.ts. Lo
    unico que el backend NO manda es el color: se calcula abajo. */
 
 export interface Jugador {
@@ -84,6 +84,8 @@ export interface Jugador {
   ultimoAsentamiento: string;
   // Caballeros que ya jugo. Decide quien tiene el ejercito mas grande.
   caballerosJugados: number;
+  // Los bots los agrega el anfitrion en la sala de espera y no tienen conexion.
+  esBot: boolean;
 }
 
 /* Aqui SI va un Record de clave suelta, porque las claves son sessionId que no

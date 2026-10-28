@@ -28,6 +28,7 @@ const MIN_JUGADORES = 2;
 interface JugadorEstado {
   nombre: string;
   puntuacion: number;
+  esBot: boolean;
 }
 
 interface EstadoDeSala {
@@ -140,6 +141,7 @@ function Navegacion() {
           sessionId,
           nombre: jugador.nombre,
           score: jugador.puntuacion,
+          esBot: jugador.esBot,
           esUsuarioActual,
           esSuTurno: sessionId === state.partida.turnoActual,
         });
@@ -301,6 +303,8 @@ function Navegacion() {
           minJugadores={MIN_JUGADORES}
           esCreador={esCreador}
           onIniciarPartida={() => room.send("msgIniciarPartida")}
+        onAgregarBot={() => room.send("msgAgregarBot")}
+        onQuitarBot={(sessionId) => room.send("msgQuitarBot", { sessionId })}
           onSalir={salirDeSala}
         />
       )}

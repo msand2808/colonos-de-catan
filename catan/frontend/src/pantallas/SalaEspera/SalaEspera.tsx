@@ -7,6 +7,7 @@ import Button from "@mui/material/Button";
 import Card from "@mui/material/Card";
 import CardContent from "@mui/material/CardContent";
 import Chip from "@mui/material/Chip";
+import IconButton from "@mui/material/IconButton";
 import Typography from "@mui/material/Typography";
 import { COLORES } from "../../common/jugador";
 import type { InfoSala } from "../sesionGuardada";
@@ -15,6 +16,7 @@ export interface JugadorVista {
   sessionId: string;
   nombre: string;
   score: number;
+  esBot: boolean;
   esUsuarioActual: boolean;
   esSuTurno: boolean;
 }
@@ -29,6 +31,8 @@ interface SalaEsperaProps {
   minJugadores: number;
   esCreador: boolean;
   onIniciarPartida: () => void;
+  onAgregarBot: () => void;
+  onQuitarBot: (sessionId: string) => void;
   onSalir: () => void;
 }
 
@@ -46,6 +50,8 @@ function SalaEspera({
   minJugadores,
   esCreador,
   onIniciarPartida,
+  onAgregarBot,
+  onQuitarBot,
   onSalir,
 }: SalaEsperaProps) {
   const [copiado, setCopiado] = useState<Copiado>(null);
@@ -112,14 +118,26 @@ function SalaEspera({
               {asientos.map((jugador, i) =>
                 jugador ? (
                   <li key={jugador.sessionId} className="col-6 col-sm-3">
-                    <Card variant="outlined" className="h-100">
+                    <Card variant="outlined" className="h-100 position-relative">
                       <CardContent className="d-flex flex-column align-items-center gap-2 p-3">
+                        {/* Solo el anfitrión puede quitar bots, nunca a un humano. */}
+                        {esCreador && jugador.esBot && (
+                          <IconButton
+                            size="small"
+                            className="position-absolute top-0 end-0 m-1"
+                            onClick={() => onQuitarBot(jugador.sessionId)}
+                            aria-label={`Quitar ${jugador.nombre}`}
+                          >
+                            ✕
+                          </IconButton>
+                        )}
                         <Avatar sx={{ bgcolor: COLORES[i % COLORES.length], width: 52, height: 52 }}>
-                          {iniciales(jugador.nombre || jugador.sessionId)}
+                          {jugador.esBot ? "🤖" : iniciales(jugador.nombre || jugador.sessionId)}
                         </Avatar>
                         <span className="fw-bold small text-truncate mw-100" title={jugador.nombre}>
                           {jugador.nombre}
                         </span>
+                        {jugador.esBot && <Chip label="Bot" color="secondary" size="small" />}
                         {jugador.esUsuarioActual && <Chip label="Tú" color="info" size="small" />}
                       </CardContent>
                     </Card>
@@ -192,6 +210,15 @@ function SalaEspera({
                 disabled={!puedeIniciar}
               >
                 🎲 Iniciar partida
+              </Button>
+              <Button
+                variant="outlined"
+                fullWidth
+                className="mt-2"
+                onClick={onAgregarBot}
+                disabled={jugadores.length >= maxJugadores}
+              >
+                🤖 Agregar bot
               </Button>
               <small className="text-body-secondary mt-2 mb-2">
                 {puedeIniciar
