@@ -303,6 +303,8 @@ function Navegacion() {
           minJugadores={MIN_JUGADORES}
           esCreador={esCreador}
           onIniciarPartida={() => room.send("msgIniciarPartida")}
+        onAgregarBot={() => room.send("msgAgregarBot")}
+        onQuitarBot={(sessionId) => room.send("msgQuitarBot", { sessionId })}
           onSalir={salirDeSala}
         />
       )}
