@@ -24,6 +24,7 @@ import { jugarMonopolio } from "../functions/jugarMonopolio.js";
 import { siguienteTurnoPreconstruccion } from "../functions/siguienteTurnoPreconstruccion.js";
 import { comprarCarta } from "../functions/comprarCarta.js";
 import { sacarJugador } from "../functions/sacarJugador.js";
+import { type ResultadoAccion, exito, fallo } from "../common/ResultadoAccion.js";
 
 
 export class CatanRoom extends Room {
@@ -110,93 +111,7 @@ export class CatanRoom extends Room {
     },
 
     msgLanzarDados: (client: Client) => {
-      //* Verificar que la partida siga en curso
-      if (this.partida.fase === FasePartida.FINALIZADA) {
-        client.send("error", {
-          mensajeError: "La partida ha finalizado"
-        })
-        return;
-      }
-
-      //* Verificar que sea el turno del jugador
-      if (this.partida.turnoActual !== client.sessionId) {
-        client.send("error", {
-          mensajeError: "No es tu turno"
-        })
-        return;
-      }
-
-      //* Verificar que estemos en la fase de juego
-      if (this.partida.fase !== FasePartida.JUEGO) {
-        client.send("error", {
-          mensajeError: "No es la fase de juego"
-        })
-        return;
-      }
-
-      //* Verificar que estemos en la fase de lanzar dados
-      if (this.partida.faseJuego !== FaseJuego.DADOS) {
-        client.send("error", {
-          mensajeError: "Ya lanzaste los dados"
-        })
-        return;
-      }
-
-      //* Lanzamiento de dados
-      const { dado1, dado2, suma } = lanzarDados();
-
-      //? Notificar a todos los jugadores el resultado de los dados
-      this.broadcast("dados", {
-        dado1,
-        dado2,
-        suma
-      })
-
-      //! Si sale 7 toda la logica cambia, entramos a fase de robo y/o ladron
-      if (suma === 7) {
-
-        //* Limpiar a los jugadors que deben descartar
-        this.partida.jugadoresParaDescartar.clear();
-
-        //* Ver el total de cartas de cada jugador
-        this.jugadores.forEach((jugador, sessionId) => {
-          let totalRecursos = 0;
-
-          //* contando la cantidad de recursos
-          jugador.recursos.forEach(cantidad => {
-            totalRecursos += cantidad;
-          });
-
-          //* Si tiene mas de 7, debe descartar la mitad
-          if (totalRecursos > 7) {
-            this.partida.jugadoresParaDescartar.set(sessionId, Math.floor(totalRecursos / 2));
-          }
-
-        });
-
-        //*Verificar si alguien tiene descarte, para enviarlo a fase de descarte
-        if (this.partida.jugadoresParaDescartar.size > 0) {
-          this.partida.faseJuego = FaseJuego.DESCARTE
-        } else {
-          this.partida.faseJuego = FaseJuego.LADRON
-        }
-
-        return;
-
-      }
-
-      //* Buscar los hexagonos con dicho numero resultado de la suma de los dados
-      const hexagonosEncontrados = buscarHexagonos(this.tablero.hexagonos, suma);
-
-      //* Dar los recursos de todos los hexagonos a la vez, para saber si la banca alcanza
-      repartirRecursos(
-        hexagonosEncontrados,
-        this.tablero.vertices,
-        this.jugadores,
-        this.banca,
-        this.tablero.ladron
-      );
-      this.partida.faseJuego = FaseJuego.ACCIONES;
+      this.responderAccion(client, this.accionLanzarDados(client.sessionId));
     },
 
     msgColocarCiudad: (
@@ -364,52 +279,7 @@ export class CatanRoom extends Room {
     },
 
     msgPasarTurno: (client: Client) => {
-      //* Verificar que la partida siga en curso
-      if (this.partida.fase === FasePartida.FINALIZADA) {
-        client.send("error", {
-          mensajeError: "La partida ha finalizado"
-        });
-
-        return;
-      }
-
-      //* Verificar que sea tu turno
-      if (this.partida.turnoActual !== client.sessionId) {
-        client.send("error", {
-          mensajeError: "No es tu turno"
-        });
-
-        return;
-      }
-
-      //* Solo se puede pasar turno en fase de acciones
-      if (this.partida.faseJuego !== FaseJuego.ACCIONES) {
-        client.send("error", {
-          mensajeError: "Termina de lanzar los dados primero"
-        });
-
-        return;
-      }
-
-      //* Log de paso de turno
-      this.broadcast("log", {
-        jugador: this.jugadores.get(client.sessionId)?.nombre,
-        mensaje: " ha pasado su turno"
-      })
-
-      this.ofertas.clear();
-
-      /** Activar las cartas compradas del jugador */
-      activarCartasCompradas(this.jugadores.get(client.sessionId));
-
-      /** Permitir usar una carta en el siguiente turno */
-      this.partida.cartaJugable = true;
-
-      //* Cancelar ofertas de intercambio activas
-      this.partida.ofertaIntercambio.limpiarOferta()
-
-      siguienteTurno(this.partida);
-
+      this.responderAccion(client, this.accionPasarTurno(client.sessionId));
     },
 
     msgColocarAsentamiento: (
@@ -1428,6 +1298,134 @@ export class CatanRoom extends Room {
     }
     
   };
+
+  //* Manda al cliente el error de una accion, si lo hubo. Los handlers solo llaman
+  //* a su accion y usan esto; los bots llaman a la accion y leen el resultado
+  responderAccion(client: Client, resultado: ResultadoAccion) {
+    if (resultado.error) {
+      client.send("error", {
+        mensajeError: resultado.mensaje
+      })
+    }
+  }
+
+  accionLanzarDados(sessionId: string): ResultadoAccion {
+    //* Verificar que la partida siga en curso
+    if (this.partida.fase === FasePartida.FINALIZADA) {
+      return fallo("La partida ha finalizado");
+    }
+
+    //* Verificar que sea el turno del jugador
+    if (this.partida.turnoActual !== sessionId) {
+      return fallo("No es tu turno");
+    }
+
+    //* Verificar que estemos en la fase de juego
+    if (this.partida.fase !== FasePartida.JUEGO) {
+      return fallo("No es la fase de juego");
+    }
+
+    //* Verificar que estemos en la fase de lanzar dados
+    if (this.partida.faseJuego !== FaseJuego.DADOS) {
+      return fallo("Ya lanzaste los dados");
+    }
+
+    //* Lanzamiento de dados
+    const { dado1, dado2, suma } = lanzarDados();
+
+    //? Notificar a todos los jugadores el resultado de los dados
+    this.broadcast("dados", {
+      dado1,
+      dado2,
+      suma
+    })
+
+    //! Si sale 7 toda la logica cambia, entramos a fase de robo y/o ladron
+    if (suma === 7) {
+
+      //* Limpiar a los jugadors que deben descartar
+      this.partida.jugadoresParaDescartar.clear();
+
+      //* Ver el total de cartas de cada jugador
+      this.jugadores.forEach((jugador, sessionId) => {
+        let totalRecursos = 0;
+
+        //* contando la cantidad de recursos
+        jugador.recursos.forEach(cantidad => {
+          totalRecursos += cantidad;
+        });
+
+        //* Si tiene mas de 7, debe descartar la mitad
+        if (totalRecursos > 7) {
+          this.partida.jugadoresParaDescartar.set(sessionId, Math.floor(totalRecursos / 2));
+        }
+
+      });
+
+      //*Verificar si alguien tiene descarte, para enviarlo a fase de descarte
+      if (this.partida.jugadoresParaDescartar.size > 0) {
+        this.partida.faseJuego = FaseJuego.DESCARTE
+      } else {
+        this.partida.faseJuego = FaseJuego.LADRON
+      }
+
+      return exito();
+
+    }
+
+    //* Buscar los hexagonos con dicho numero resultado de la suma de los dados
+    const hexagonosEncontrados = buscarHexagonos(this.tablero.hexagonos, suma);
+
+    //* Dar los recursos de todos los hexagonos a la vez, para saber si la banca alcanza
+    repartirRecursos(
+      hexagonosEncontrados,
+      this.tablero.vertices,
+      this.jugadores,
+      this.banca,
+      this.tablero.ladron
+    );
+    this.partida.faseJuego = FaseJuego.ACCIONES;
+
+    return exito();
+  }
+
+  accionPasarTurno(sessionId: string): ResultadoAccion {
+    //* Verificar que la partida siga en curso
+    if (this.partida.fase === FasePartida.FINALIZADA) {
+      return fallo("La partida ha finalizado");
+    }
+
+    //* Verificar que sea tu turno
+    if (this.partida.turnoActual !== sessionId) {
+      return fallo("No es tu turno");
+    }
+
+    //* Solo se puede pasar turno en fase de acciones
+    if (this.partida.faseJuego !== FaseJuego.ACCIONES) {
+      return fallo("Termina de lanzar los dados primero");
+    }
+
+    //* Log de paso de turno
+    this.broadcast("log", {
+      jugador: this.jugadores.get(sessionId)?.nombre,
+      mensaje: " ha pasado su turno"
+    })
+
+    this.ofertas.clear();
+
+    /** Activar las cartas compradas del jugador */
+    activarCartasCompradas(this.jugadores.get(sessionId));
+
+    /** Permitir usar una carta en el siguiente turno */
+    this.partida.cartaJugable = true;
+
+    //* Cancelar ofertas de intercambio activas
+    this.partida.ofertaIntercambio.limpiarOferta()
+
+    siguienteTurno(this.partida);
+
+    return exito();
+  }
 
   //* Registrar el rechazo de un jugador a la oferta activa y cancelarla si todos rechazaron
   rechazarOferta(sessionId: string) {
