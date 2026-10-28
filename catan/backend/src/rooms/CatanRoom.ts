@@ -413,215 +413,19 @@ export class CatanRoom extends Room {
     },
 
     msgCartaCarreteras: (client: Client) => {
-      // * Verificar que la partida siga en curso
-      if (this.partida.fase === FasePartida.FINALIZADA) {
-        client.send("error", {
-          mensajeError: "La partida ha finalizado"
-        })
-        return;
-      }
-
-      //* Verificar que sea el turno del jugador
-      if (this.partida.turnoActual !== client.sessionId) {
-        client.send("error", {
-          mensajeError: "No es tu turno"
-        })
-        return;
-      }
-
-      //* Verificar que se permita usar carta
-      if(!this.partida.cartaJugable){
-        client.send("error", {
-          mensajeError: "Solo una carta por turno"
-        })
-        return;
-      }
-
-      // * Verificar que estemos en fase de acciones
-      if (this.partida.faseJuego !== FaseJuego.ACCIONES) {
-        client.send("error", {
-          mensajeError: "Termina de lanzar los dados primero"
-        })
-        return;
-      }
-
-      // * Verificar que tenemos la carta usable
-      const jugador = this.jugadores.get(client.sessionId);
-      if (jugador.cartas_usables.get(`${Desarrollo.CARRETERA}`) < 1) {
-        client.send("error", {
-          mensajeError: "No tienes la carta de carreteras"
-        })
-        return;
-      }
-
-      // * Eliminar la carta de carreteras del jugador
-      jugador.cartas_usables.set(
-        `${Desarrollo.CARRETERA}`,
-        jugador.cartas_usables.get(`${Desarrollo.CARRETERA}`) - 1
-      )
-
-      // * Activar el efeco de la carta de carreteras
-      this.partida.carreterasGratis = 2;
-      this.partida.faseJuego = FaseJuego.CARRETERAS;
-
-      // * Desactivar el uso de otra carta este turno
-      this.partida.cartaJugable = false;
-
-      //* Log de la carta de carreteras
-      this.broadcast("log", {
-        jugador: this.jugadores.get(client.sessionId)?.nombre,
-        mensaje: " ha jugado una carta de carreteras"
-      })
+      this.responderAccion(client, this.accionCartaCarreteras(client.sessionId));
     },
 
     msgCaminoGratis: (client: Client, mensaje: { h: number, d: number, p: number }) => {
       this.responderAccion(client, this.accionCaminoGratis(client.sessionId, mensaje.h, mensaje.d, mensaje.p));
     },
 
-    msgCartaAbundancia: (
-      client: Client,
-      mensaje: { recurso1: string, recurso2: string }
-    ) => {
-      //* Verificar que la partida siga en curso
-      if (this.partida.fase === FasePartida.FINALIZADA) {
-        client.send("error", {
-          mensajeError: "La partida ha finalizado"
-        })
-        return;
-      }
-
-      //* Verificar que sea el turno del jugador
-      if (this.partida.turnoActual !== client.sessionId) {
-        client.send("error", {
-          mensajeError: "No es tu turno"
-        })
-        return;
-      }
-
-      //* Verificar que estamos en fase de acciones
-      if (this.partida.faseJuego !== FaseJuego.ACCIONES) {
-        client.send("error", {
-          mensajeError: "Termina de lanzar los dados primero"
-        })
-        return;
-      }
-
-
-      //* Verificar si se permite usar carta
-      if (!this.partida.cartaJugable) {
-        client.send("error", {
-          mensajeError: "solo una carta por turno"
-        })
-        return;
-      }
-
-      //* Verificar que tenga la carta de abundancia
-      const jugador = this.jugadores.get(client.sessionId);
-      if (jugador.cartas_usables.get(`${Desarrollo.ABUNDANCIA}`) < 1) {
-        client.send("error", {
-          mensajeError: "No tienes la carta de abundancia"
-        })
-        return;
-      }
-
-
-      //* Intentar jugar la carta de abundancia
-      const resultado = jugarAbundancia(
-        jugador, this.banca, mensaje.recurso1, mensaje.recurso2
-      );
-
-      //* Si no puede jugar, notificar error
-      if (resultado.error) {
-        client.send("error", {
-          mensajeError: resultado.mensaje
-        })
-        return;
-      }
-
-      //* Log de la carta de abundancia
-      if(!resultado.error){
-        this.broadcast("log", {
-          jugador: this.jugadores.get(client.sessionId)?.nombre,
-          mensaje: resultado.mensaje
-        })
-      }
-
-      //* Marcar que ya se utilizo una carta en este turno
-      this.partida.cartaJugable = false;
-
+    msgCartaAbundancia: (client: Client, mensaje: { recurso1: string, recurso2: string }) => {
+      this.responderAccion(client, this.accionCartaAbundancia(client.sessionId, mensaje.recurso1, mensaje.recurso2));
     },
 
-    msgCartaMonopolio: (
-      client: Client,
-      mensaje: { recurso: string }
-    ) => {
-      //* Verificar que la partida siga en curso
-      if (this.partida.fase === FasePartida.FINALIZADA) {
-        client.send("error", {
-          mensajeError: "La partida ha finalizado"
-        });
-        return;
-      }
-
-      //* Verificar que sea el turno del jugador
-      if (this.partida.turnoActual !== client.sessionId) {
-        client.send("error", {
-          mensajeError: "No es tu turno"
-        });
-        return;
-      }
-
-      //* Verificar que estamos en fase de acciones
-      if (this.partida.faseJuego !== FaseJuego.ACCIONES) {
-        client.send("error", {
-          mensajeError: "Termina de lanzar los dados primero"
-        });
-        return;
-      }
-
-      //* Verificar que se permite usar carta
-      if (!this.partida.cartaJugable) {
-        client.send("error", {
-          mensajeError: "Solo una carta por turno"
-        });
-        return;
-      }
-
-      //* Verificar que tenga la carta de monopolio
-      const jugador = this.jugadores.get(client.sessionId);
-
-      if (jugador.cartas_usables.get(`${Desarrollo.MONOPOLIO}`) < 1) {
-        client.send("error", {
-          mensajeError: "No tienes la carta de monopolio"
-        });
-        return;
-      }
-
-      //* Intentar jugar la carta de monopolio
-      const resultado = jugarMonopolio(
-        this.jugadores,
-        client.sessionId,
-        mensaje.recurso
-      );
-
-      //* Si no se pudo jugar, notificar error
-      if (resultado.error) {
-        client.send("error", {
-          mensajeError: resultado.mensaje
-        });
-        return;
-      }
-
-      //* Log de la carta de monopolio
-      if(!resultado.error){
-        this.broadcast("log", { 
-          jugador: this.jugadores.get(client.sessionId)?.nombre,
-          mensaje: resultado.mensaje
-        })
-      }
-
-      //* Marcar que ya se utilizo una carta en este turno
-      this.partida.cartaJugable = false;
+    msgCartaMonopolio: (client: Client, mensaje: { recurso: string }) => {
+      this.responderAccion(client, this.accionCartaMonopolio(client.sessionId, mensaje.recurso));
     },
 
     msgRobarJugador: (client: Client, mensaje: { jugadorRobado: string }) => {
@@ -1319,6 +1123,162 @@ export class CatanRoom extends Room {
     //* Limpiar Lista y volver a acciones
     this.partida.jugadoresParaRobar.clear();
     this.partida.faseJuego = FaseJuego.ACCIONES;
+
+    return exito();
+  }
+
+  accionCartaCarreteras(sessionId: string): ResultadoAccion {
+    // * Verificar que la partida siga en curso
+    if (this.partida.fase === FasePartida.FINALIZADA) {
+      return fallo("La partida ha finalizado");
+    }
+
+    //* Verificar que sea el turno del jugador
+    if (this.partida.turnoActual !== sessionId) {
+      return fallo("No es tu turno");
+    }
+
+    //* Verificar que se permita usar carta
+    if(!this.partida.cartaJugable){
+      return fallo("Solo una carta por turno");
+    }
+
+    // * Verificar que estemos en fase de acciones
+    if (this.partida.faseJuego !== FaseJuego.ACCIONES) {
+      return fallo("Termina de lanzar los dados primero");
+    }
+
+    // * Verificar que tenemos la carta usable
+    const jugador = this.jugadores.get(sessionId);
+    if (jugador.cartas_usables.get(`${Desarrollo.CARRETERA}`) < 1) {
+      return fallo("No tienes la carta de carreteras");
+    }
+
+    // * Eliminar la carta de carreteras del jugador
+    jugador.cartas_usables.set(
+      `${Desarrollo.CARRETERA}`,
+      jugador.cartas_usables.get(`${Desarrollo.CARRETERA}`) - 1
+    )
+
+    // * Activar el efeco de la carta de carreteras
+    this.partida.carreterasGratis = 2;
+    this.partida.faseJuego = FaseJuego.CARRETERAS;
+
+    // * Desactivar el uso de otra carta este turno
+    this.partida.cartaJugable = false;
+
+    //* Log de la carta de carreteras
+    this.broadcast("log", {
+      jugador: this.jugadores.get(sessionId)?.nombre,
+      mensaje: " ha jugado una carta de carreteras"
+    })
+
+    return exito();
+  }
+
+  accionCartaAbundancia(sessionId: string, recurso1: string, recurso2: string): ResultadoAccion {
+    //* Verificar que la partida siga en curso
+    if (this.partida.fase === FasePartida.FINALIZADA) {
+      return fallo("La partida ha finalizado");
+    }
+
+    //* Verificar que sea el turno del jugador
+    if (this.partida.turnoActual !== sessionId) {
+      return fallo("No es tu turno");
+    }
+
+    //* Verificar que estamos en fase de acciones
+    if (this.partida.faseJuego !== FaseJuego.ACCIONES) {
+      return fallo("Termina de lanzar los dados primero");
+    }
+
+
+    //* Verificar si se permite usar carta
+    if (!this.partida.cartaJugable) {
+      return fallo("solo una carta por turno");
+    }
+
+    //* Verificar que tenga la carta de abundancia
+    const jugador = this.jugadores.get(sessionId);
+    if (jugador.cartas_usables.get(`${Desarrollo.ABUNDANCIA}`) < 1) {
+      return fallo("No tienes la carta de abundancia");
+    }
+
+
+    //* Intentar jugar la carta de abundancia
+    const resultado = jugarAbundancia(
+      jugador, this.banca, recurso1, recurso2
+    );
+
+    //* Si no puede jugar, notificar error
+    if (resultado.error) {
+      return fallo(resultado.mensaje);
+    }
+
+    //* Log de la carta de abundancia
+    if(!resultado.error){
+      this.broadcast("log", {
+        jugador: this.jugadores.get(sessionId)?.nombre,
+        mensaje: resultado.mensaje
+      })
+    }
+
+    //* Marcar que ya se utilizo una carta en este turno
+    this.partida.cartaJugable = false;
+
+    return exito();
+  }
+
+  accionCartaMonopolio(sessionId: string, recurso: string): ResultadoAccion {
+    //* Verificar que la partida siga en curso
+    if (this.partida.fase === FasePartida.FINALIZADA) {
+      return fallo("La partida ha finalizado");
+    }
+
+    //* Verificar que sea el turno del jugador
+    if (this.partida.turnoActual !== sessionId) {
+      return fallo("No es tu turno");
+    }
+
+    //* Verificar que estamos en fase de acciones
+    if (this.partida.faseJuego !== FaseJuego.ACCIONES) {
+      return fallo("Termina de lanzar los dados primero");
+    }
+
+    //* Verificar que se permite usar carta
+    if (!this.partida.cartaJugable) {
+      return fallo("Solo una carta por turno");
+    }
+
+    //* Verificar que tenga la carta de monopolio
+    const jugador = this.jugadores.get(sessionId);
+
+    if (jugador.cartas_usables.get(`${Desarrollo.MONOPOLIO}`) < 1) {
+      return fallo("No tienes la carta de monopolio");
+    }
+
+    //* Intentar jugar la carta de monopolio
+    const resultado = jugarMonopolio(
+      this.jugadores,
+      sessionId,
+      recurso
+    );
+
+    //* Si no se pudo jugar, notificar error
+    if (resultado.error) {
+      return fallo(resultado.mensaje);
+    }
+
+    //* Log de la carta de monopolio
+    if(!resultado.error){
+      this.broadcast("log", { 
+        jugador: this.jugadores.get(sessionId)?.nombre,
+        mensaje: resultado.mensaje
+      })
+    }
+
+    //* Marcar que ya se utilizo una carta en este turno
+    this.partida.cartaJugable = false;
 
     return exito();
   }
