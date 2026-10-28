@@ -24,6 +24,7 @@ import { jugarMonopolio } from "../functions/jugarMonopolio.js";
 import { siguienteTurnoPreconstruccion } from "../functions/siguienteTurnoPreconstruccion.js";
 import { comprarCarta } from "../functions/comprarCarta.js";
 import { sacarJugador } from "../functions/sacarJugador.js";
+import { type ResultadoAccion, exito, fallo } from "../common/ResultadoAccion.js";
 
 
 export class CatanRoom extends Room {
@@ -64,207 +65,16 @@ export class CatanRoom extends Room {
       
     },
 
-    msgIntercambiarBanca: (
-      client: Client,
-      mensaje: { recursoEntregado: string, recursoRecibido: string }
-    ) => {
-      //* Verificar que sea el turno del jugador
-      if (this.partida.turnoActual !== client.sessionId) {
-        client.send("error", {
-          mensajeError: "No es tu turno"
-        })
-        return;
-      }
-
-      //* Verificar que estemos en la fase de acciones
-      if (this.partida.faseJuego !== FaseJuego.ACCIONES) {
-        client.send("error", {
-          mensajeError: "Termian de lanzar los dados primero"
-        })
-        return;
-      }
-
-      //* Intentar realizar el intercambio con la banca
-      const resultado = comerciarBanca(
-        this.jugadores.get(client.sessionId), this.banca, client.sessionId,
-        this.tablero.vertices, this.tablero.puertos,
-        mensaje.recursoEntregado, mensaje.recursoRecibido
-      );
-
-      //* Si el intercambio fallo, notificar error
-      if (resultado.error) {
-        client.send("error", {
-          mensajeError: resultado.mensaje
-        })
-        return;
-      }
-
-      //* Log del intecambio con la banca
-      if(!resultado.error){
-        this.broadcast("log", {
-          jugador: this.jugadores.get(client.sessionId)?.nombre,
-          mensaje: resultado.mensaje
-        })
-      }
-
+    msgIntercambiarBanca: (client: Client, mensaje: { recursoEntregado: string, recursoRecibido: string }) => {
+      this.responderAccion(client, this.accionIntercambiarBanca(client.sessionId, mensaje.recursoEntregado, mensaje.recursoRecibido));
     },
 
     msgLanzarDados: (client: Client) => {
-      //* Verificar que la partida siga en curso
-      if (this.partida.fase === FasePartida.FINALIZADA) {
-        client.send("error", {
-          mensajeError: "La partida ha finalizado"
-        })
-        return;
-      }
-
-      //* Verificar que sea el turno del jugador
-      if (this.partida.turnoActual !== client.sessionId) {
-        client.send("error", {
-          mensajeError: "No es tu turno"
-        })
-        return;
-      }
-
-      //* Verificar que estemos en la fase de juego
-      if (this.partida.fase !== FasePartida.JUEGO) {
-        client.send("error", {
-          mensajeError: "No es la fase de juego"
-        })
-        return;
-      }
-
-      //* Verificar que estemos en la fase de lanzar dados
-      if (this.partida.faseJuego !== FaseJuego.DADOS) {
-        client.send("error", {
-          mensajeError: "Ya lanzaste los dados"
-        })
-        return;
-      }
-
-      //* Lanzamiento de dados
-      const { dado1, dado2, suma } = lanzarDados();
-
-      //? Notificar a todos los jugadores el resultado de los dados
-      this.broadcast("dados", {
-        dado1,
-        dado2,
-        suma
-      })
-
-      //! Si sale 7 toda la logica cambia, entramos a fase de robo y/o ladron
-      if (suma === 7) {
-
-        //* Limpiar a los jugadors que deben descartar
-        this.partida.jugadoresParaDescartar.clear();
-
-        //* Ver el total de cartas de cada jugador
-        this.jugadores.forEach((jugador, sessionId) => {
-          let totalRecursos = 0;
-
-          //* contando la cantidad de recursos
-          jugador.recursos.forEach(cantidad => {
-            totalRecursos += cantidad;
-          });
-
-          //* Si tiene mas de 7, debe descartar la mitad
-          if (totalRecursos > 7) {
-            this.partida.jugadoresParaDescartar.set(sessionId, Math.floor(totalRecursos / 2));
-          }
-
-        });
-
-        //*Verificar si alguien tiene descarte, para enviarlo a fase de descarte
-        if (this.partida.jugadoresParaDescartar.size > 0) {
-          this.partida.faseJuego = FaseJuego.DESCARTE
-        } else {
-          this.partida.faseJuego = FaseJuego.LADRON
-        }
-
-        return;
-
-      }
-
-      //* Buscar los hexagonos con dicho numero resultado de la suma de los dados
-      const hexagonosEncontrados = buscarHexagonos(this.tablero.hexagonos, suma);
-
-      //* Dar los recursos de todos los hexagonos a la vez, para saber si la banca alcanza
-      repartirRecursos(
-        hexagonosEncontrados,
-        this.tablero.vertices,
-        this.jugadores,
-        this.banca,
-        this.tablero.ladron
-      );
-      this.partida.faseJuego = FaseJuego.ACCIONES;
+      this.responderAccion(client, this.accionLanzarDados(client.sessionId));
     },
 
-    msgColocarCiudad: (
-      client: Client,
-      mensaje: { h: number, d: number, p: number }
-    ) => {
-      //* Verificar que la partida siga un curso
-      if (this.partida.fase === FasePartida.FINALIZADA) {
-        client.send("error", {
-          mensajeError: "La partida ha finalizado"
-        })
-        return;
-      }
-
-      //*Verificar que sea el turno del jugador
-      if (this.partida.turnoActual !== client.sessionId) {
-        client.send("error", {
-          mensajeError: "No es tu turno"
-        })
-        return;
-      }
-
-      //* Verificar que estemos en la fase de juego
-      if (this.partida.fase !== FasePartida.JUEGO) {
-        client.send("error", {
-          mensajeError: "No es la fase de juego"
-        });
-        return;
-      }
-
-      //* Verificar que estemos en la fase de acciones
-      if (this.partida.faseJuego !== FaseJuego.ACCIONES) {
-        client.send("error", {
-          mensajeError: "Debes lanzar los dados primero"
-        })
-        return;
-      }
-
-      //* Obtener el jugador del state y que exista
-      const jugador = this.jugadores.get(client.sessionId);
-      if (!jugador) return;
-      const { h, d, p } = mensaje;
-
-      //* Intentar construir la ciudad
-      const resultado = construirCiudad(
-        this.tablero.vertices,
-        h, d, p,
-        jugador, this.banca, client.sessionId
-      )
-
-      //* Si no se pudo construir, se notifica el error
-      if (resultado.error) {
-        client.send("error", {
-          mensajeError: resultado.mensaje
-        })
-        return;
-      }
-
-      //* Log de la construccion de la ciudad
-      if(!resultado.error){
-        this.broadcast("log", {
-          jugador: this.jugadores.get(client.sessionId)?.nombre,
-          mensaje: resultado.mensaje
-        })
-      }
-
-      //* Verificar si el jugador ha ganado
-      verificarVictoria(this.partida, jugador, client.sessionId, this);
+    msgColocarCiudad: (client: Client, mensaje: { h: number, d: number, p: number }) => {
+      this.responderAccion(client, this.accionColocarCiudad(client.sessionId, mensaje.h, mensaje.d, mensaje.p));
     },
 
     msgIniciarPartida: (client: Client) => {
@@ -364,1070 +174,1075 @@ export class CatanRoom extends Room {
     },
 
     msgPasarTurno: (client: Client) => {
-      //* Verificar que la partida siga en curso
-      if (this.partida.fase === FasePartida.FINALIZADA) {
-        client.send("error", {
-          mensajeError: "La partida ha finalizado"
-        });
-
-        return;
-      }
-
-      //* Verificar que sea tu turno
-      if (this.partida.turnoActual !== client.sessionId) {
-        client.send("error", {
-          mensajeError: "No es tu turno"
-        });
-
-        return;
-      }
-
-      //* Solo se puede pasar turno en fase de acciones
-      if (this.partida.faseJuego !== FaseJuego.ACCIONES) {
-        client.send("error", {
-          mensajeError: "Termina de lanzar los dados primero"
-        });
-
-        return;
-      }
-
-      //* Log de paso de turno
-      this.broadcast("log", {
-        jugador: this.jugadores.get(client.sessionId)?.nombre,
-        mensaje: " ha pasado su turno"
-      })
-
-      this.ofertas.clear();
-
-      /** Activar las cartas compradas del jugador */
-      activarCartasCompradas(this.jugadores.get(client.sessionId));
-
-      /** Permitir usar una carta en el siguiente turno */
-      this.partida.cartaJugable = true;
-
-      //* Cancelar ofertas de intercambio activas
-      this.partida.ofertaIntercambio.limpiarOferta()
-
-      siguienteTurno(this.partida);
-
+      this.responderAccion(client, this.accionPasarTurno(client.sessionId));
     },
 
-    msgColocarAsentamiento: (
-      client: Client,
-      mensaje: { h: number, d: number, p: number }
-    ) => {
-      //* Verificar que la partida siga en curso
-      if (this.partida.fase === FasePartida.FINALIZADA) {
-        client.send("error", {
-          mensajeError: "La partida ha finalizado"
-        })
-        return;
-      }
-
-      //*Verificar que el turno sea del jugador 
-      if (this.partida.turnoActual !== client.sessionId) {
-        client.send("error", {
-          mensajeError: "No es tu turno"
-        })
-        return;
-      }
-
-      const jugador = this.jugadores.get(client.sessionId);
-      if (!jugador) return;
-
-      const { h, d, p } = mensaje;
-
-      //! FLUJO DE LA FASE PRECONSTRUCCION
-      if (this.partida.fase === FasePartida.PRECONSTRUCCION) {
-        //* Comprobar que estamos en la fase de colocar asentamiento
-        if (this.partida.fasePreconstruccion !== FasePreconstruccion.ASENTAMIENTO) {
-          client.send("error", {
-            mensajeError: "Debes colocar un camino"
-          })
-          return;
-        }
-
-        //* Intentar construir el asentamiento
-        const resultado = construirAsentamiento(
-          this.tablero.vertices,
-          this.tablero.aristas,
-          this.partida,
-          h, d, p,
-          jugador,
-          this.banca,
-          client.sessionId)
-
-        if (resultado.error) {
-          client.send("error", {
-            mensajeError: resultado.mensaje
-          })
-          return;
-        }
-
-        //* Log de la construccion del asentamiento
-        if(!resultado.error){
-          this.broadcast("log", {
-            jugador: this.jugadores.get(client.sessionId)?.nombre,
-            mensaje: resultado.mensaje
-          })
-        }
-
-        //* Si estamos en vuelta de regreso de la preconstruccion
-        if (this.partida.direccionPreconstruccion === -1) {
-          darMaterialInicial(this.tablero.hexagonos, jugador, h, d, p, this.banca);
-        }
-
-        this.partida.fasePreconstruccion = FasePreconstruccion.CAMINO;
-        return;
-
-      }
-
-      //!FLUJO EN JUEGO
-      if (this.partida.fase == FasePartida.JUEGO) {
-        //* Comprobar que estamos en la fase de acciones
-        if (this.partida.faseJuego !== FaseJuego.ACCIONES) {
-          client.send("error", {
-            mensajeError: "Debes lanzar los dados primero"
-          })
-          return;
-        }
-
-        //* Intentar construir asentamiento
-        const resultado = construirAsentamiento(
-          this.tablero.vertices,
-          this.tablero.aristas,
-          this.partida,
-          h, d, p,
-          jugador,
-          this.banca,
-          client.sessionId
-        )
-
-        //* Si algo fallo en la construccion, indicar el error
-        if (resultado.error) {
-          client.send("error", {
-            mensajeError: resultado.mensaje
-          })
-          return;
-        }
-
-        //* Log de la construccion del asentamiento
-        if(!resultado.error){
-          this.broadcast("log", {
-            jugador: this.jugadores.get(client.sessionId)?.nombre,
-            mensaje: resultado.mensaje
-          })
-        }
-
-        //* Verificar si el jugador ha ganado
-        verificarVictoria(this.partida, jugador, client.sessionId, this);
-      }
-
+    msgColocarAsentamiento: (client: Client, mensaje: { h: number, d: number, p: number }) => {
+      this.responderAccion(client, this.accionColocarAsentamiento(client.sessionId, mensaje.h, mensaje.d, mensaje.p));
     },
 
-    msgColocarCamino: (
-      client: Client,
-      mensaje: { h: number, d: number, p: number }
-    ) => {
-
-      //* Verificar que la partida siga en curso
-      if (this.partida.fase === FasePartida.FINALIZADA) {
-        client.send("error", {
-          mensajeError: "La partida ha finalizado"
-        })
-        return;
-      }
-
-      //* Verificar que sea el turno del jugador
-      if (this.partida.turnoActual !== client.sessionId) {
-        client.send("error", {
-          mensajeError: "No es tu turno"
-        })
-        return;
-      }
-
-      //* Obtener el jugador del state y que exista
-      const jugador = this.jugadores.get(client.sessionId);
-      if (!jugador) return;
-      const { h, d, p } = mensaje;
-
-
-      //! FLUJO EN PRECONSTRUCCION
-      if (this.partida.fase === FasePartida.PRECONSTRUCCION) {
-
-        //* Comprobar que estemos en la fase de colocar camino
-        if (this.partida.fasePreconstruccion !== FasePreconstruccion.CAMINO) {
-          client.send("error", {
-            mensajeError: "Coloca primero un asentamiento"
-          })
-          return;
-        }
-
-        //* Intentar construir el camino
-        const resultado = construirCamino(
-          this.tablero.vertices, this.tablero.aristas, this.partida,
-          h, d, p, jugador, this.banca, client.sessionId
-        )
-
-        //* Si no se pudo construir, se notifica el error
-        if (resultado.error) {
-          client.send("error", {
-            mensajeError: resultado.mensaje
-          })
-          return;
-        }
-
-        //* Log de la construccion del camino
-        if(!resultado.error){
-          this.broadcast("log", {
-            jugador: this.jugadores.get(client.sessionId)?.nombre,
-            mensaje: resultado.mensaje
-          })
-        }
-
-        //? Ahora le toca al siguiente jugador poner un asentamiento
-        this.partida.fasePreconstruccion = FasePreconstruccion.ASENTAMIENTO;
-        siguienteTurnoPreconstruccion(this.partida);
-        return;
-      }
-
-      //! FLUJO EN JUEGO
-      if (this.partida.fase === FasePartida.JUEGO) {
-
-        //* Comprobar que estemos en la fase de acciones
-        if (this.partida.faseJuego !== FaseJuego.ACCIONES) {
-          client.send("error", {
-            mensajeError: "Debes lanzar los dados primero"
-          })
-          return;
-        }
-
-        //* Intentar construir el camino
-        const resultado = construirCamino(
-          this.tablero.vertices, this.tablero.aristas, this.partida,
-          h, d, p, jugador, this.banca, client.sessionId
-        )
-
-        //* Si no se pudo construir, se notifica el error
-        if (resultado.error) {
-          client.send("error", {
-            mensajeError: resultado.mensaje
-          })
-          return;
-        }
-
-        //* Log de la construccion del camino
-        if(!resultado.error){
-          this.broadcast("log", {
-            jugador: this.jugadores.get(client.sessionId)?.nombre,
-            mensaje: resultado.mensaje
-          })
-        }
-      }
+    msgColocarCamino: (client: Client, mensaje: { h: number, d: number, p: number }) => {
+      this.responderAccion(client, this.accionColocarCamino(client.sessionId, mensaje.h, mensaje.d, mensaje.p));
     },
 
-    msgDescartarRecursos: (
-      client: Client,
-      mensaje: { recurso: string }
-    ) => {
-      //* Verificar si estamos en fase de descarte
-      if (this.partida.faseJuego !== FaseJuego.DESCARTE) {
-        client.send("error", {
-          mensajeError: "No es la fase de descarte"
-        })
-        return;
-      }
-
-      //* Verificar si el jugador esta en la lista de descarte
-      if (!this.partida.jugadoresParaDescartar.has(client.sessionId)) {
-        client.send("error", {
-          mensajeError: "No tienes que descartar"
-        })
-        return;
-      }
-
-      //* Encontrar al jugador que debe descartar
-      const jugadorPorDescartar = client.sessionId;
-
-      //* Intentar descartar
-      const resultado = descartarRecurso(
-        this.jugadores.get(jugadorPorDescartar),
-        this.banca,
-        mensaje.recurso
-      );
-
-
-      //*Error en descarte
-      if (resultado.error) {
-        client.send("error", {
-          mensajeError: resultado.mensaje
-        })
-        return;
-      }
-
-
-      //*Actualizar la cantidad de recursos que le faltan por descartar
-      this.partida.jugadoresParaDescartar.set(
-        jugadorPorDescartar,
-        this.partida.jugadoresParaDescartar.get(jugadorPorDescartar) - 1
-      );
-
-      //* Eliminarlo de la lista si ya no tiene que descartar
-      if (this.partida.jugadoresParaDescartar.get(jugadorPorDescartar) === 0) {
-        this.partida.jugadoresParaDescartar.delete(jugadorPorDescartar);
-        //* Log de terminacion de descarte
-        this.broadcast("log", {
-          jugador: this.jugadores.get(client.sessionId)?.nombre,
-          mensaje: " ha terminado de descartar"
-        })
-      }
-
-      //* Verificar si ya no hay jugadores que deben descartar, para pasar a fase de ladron
-      if (this.partida.jugadoresParaDescartar.size == 0) {
-        this.partida.faseJuego = FaseJuego.LADRON;
-        //* Log de todos descartaron
-        this.broadcast("log", {
-          jugador: "Sistema: ",
-          mensaje: "Todos los jugadores han terminado de descartar"
-        })
-        return;
-      }
+    msgDescartarRecursos: (client: Client, mensaje: { recurso: string }) => {
+      this.responderAccion(client, this.accionDescartarRecursos(client.sessionId, mensaje.recurso));
     },
 
-    msgMoverLadron: (
-      client: Client,
-      mensaje: { h: number, d: number }
-    ) => {
-      //* Verificar que sea el turno del jugador
-      if (this.partida.turnoActual !== client.sessionId) {
-        client.send("error", {
-          mensajeError: "No es tu turno"
-        })
-        return;
-      }
-
-      //*Verificar que estemos en la fase de juego
-      if (this.partida.fase !== FasePartida.JUEGO) {
-        client.send("error", {
-          mensajeError: "No es la fase de juego"
-        })
-        return;
-      }
-
-      //* Verificar que estemos en la fase de mover al ladron
-      if (this.partida.faseJuego !== FaseJuego.LADRON) {
-        client.send("error", {
-          mensajeError: "No es la fase de mover al ladron"
-        })
-        return;
-      }
-
-
-      //* Mover al ladron y obtener los jugadores involucrados
-      const { h, d } = mensaje;
-      const resultado = moverLadron(
-        this.tablero,
-        this.jugadores,
-        client.sessionId,
-        h, d
-      );
-
-      if (resultado.error) {
-        client.send("error", {
-          mensajeError: resultado.mensaje
-        })
-        return;
-      }
-
-      //* Log de movimiento del ladron
-      if(!resultado.error){
-        this.broadcast("log", {
-          jugador: this.jugadores.get(client.sessionId)?.nombre,
-          mensaje: resultado.mensaje
-        })
-      }
-
-      //*Extraemos los jugadores involucrados en el robo
-      const jugadoresinvolucrados = resultado.jugadoresInvolucrados;
-
-      //* Si no hay jugadores pasamos a las acciones
-      if (jugadoresinvolucrados.length === 0) {
-        this.partida.faseJuego = FaseJuego.ACCIONES;
-        return;
-      }
-
-      //*Si solo hubo un jugador, se le roba automaticamente
-      if (jugadoresinvolucrados.length === 1) {
-        robarJugador(
-          this.jugadores.get(client.sessionId),
-          this.jugadores.get(jugadoresinvolucrados[0])
-        )
-        this.partida.faseJuego = FaseJuego.ACCIONES;
-
-        //* Log del robo automatico
-        this.broadcast("log", {
-          jugador: this.jugadores.get(client.sessionId)?.nombre,
-          mensaje: ` ha robado un recurso a ${this.jugadores.get(jugadoresinvolucrados[0])?.nombre}`
-        })
-        return;
-      }
-
-      //* Si hay 2 o mas jugadores involucrados, se pasa la lista de jugadores
-      this.partida.jugadoresParaRobar.clear();
-      this.partida.jugadoresParaRobar.push(...jugadoresinvolucrados);
-
-
-      this.partida.faseJuego = FaseJuego.ROBO
+    msgMoverLadron: (client: Client, mensaje: { h: number, d: number }) => {
+      this.responderAccion(client, this.accionMoverLadron(client.sessionId, mensaje.h, mensaje.d));
     },
 
-    msgCartaCaballero: (
-      client: Client,
-      mensaje: { h: number, d: number }
-    ) => {
-      //* Verificar que la partida siga en curso
-      if (this.partida.fase === FasePartida.FINALIZADA) {
-        client.send("error", {
-          mensajeError: "La partida ha finalizado"
-        })
-        return;
-      }
-
-      //* Verificar que sea el turno del jugador
-      if (this.partida.turnoActual !== client.sessionId) {
-        client.send("error", {
-          mensajeError: "No es tu turno"
-        })
-        return;
-      }
-
-      //* Verificar si estamos en la fase de acciones
-      if (this.partida.faseJuego !== FaseJuego.ACCIONES) {
-        client.send("error", {
-          mensajeError: "Termina de lanzar los dados primero"
-        })
-        return;
-      }
-
-
-      //* Verificar que se permita usar carta
-      if (!this.partida.cartaJugable) {
-        client.send("error", {
-          mensajeError: "Solo una carta por turno"
-        })
-        return;
-      }
-
-
-      //* Verificar que el jugador tenga la carta de caballero
-      const jugador = this.jugadores.get(client.sessionId);
-      if (jugador.cartas_usables.get(`${Desarrollo.CABALLERO}`) < 1) {
-        client.send("error", {
-          mensajeError: "No tienes la carta de caballero"
-        })
-        return;
-      }
-
-      //* Mover al ladron y obtener los jugadores involucrados
-      const { h, d } = mensaje;
-      const resultado = moverLadron(
-        this.tablero,
-        this.jugadores,
-        client.sessionId,
-        h, d);
-
-
-      //* Si no se puede mover el ladron, notificar error
-      if (resultado.error) {
-        client.send("error", {
-          mensajeError: resultado.mensaje
-        })
-        return;
-      }
-
-      //* Log del uso de la carta de caballero
-      this.broadcast("log", {
-        jugador: this.jugadores.get(client.sessionId)?.nombre,
-        mensaje: " ha jugado una carta de caballero"
-      })
-
-      //* Eliminar la carta de caballero del jugador
-      jugarCaballero(this.jugadores, client.sessionId, this.partida, this); 
-
-      //* Verificar si el jugador ha ganado
-      verificarVictoria(this.partida, jugador, client.sessionId, this);
-      
-      //* Deshabilitar el uso de otra carta este turno
-      this.partida.cartaJugable = false;     
-
-      //* Extraemos los jugadores involucrados en el robo
-      const jugadoresInvolucrados = resultado.jugadoresInvolucrados;
-
-      //* Si no hay jugadores, pasamos a las ACCIONES
-      if (jugadoresInvolucrados.length == 0) {
-        this.partida.faseJuego = FaseJuego.ACCIONES;
-        return;
-      }
-
-      //* Si solo hubo un jugador, se le roba automaticamente
-      if (jugadoresInvolucrados.length === 1) {
-        robarJugador(
-          this.jugadores.get(client.sessionId),
-          this.jugadores.get(jugadoresInvolucrados[0])
-        )
-        this.partida.faseJuego = FaseJuego.ACCIONES;
-        return;
-      }
-
-      //* Si hay 2 o mas jugadores involucrados, se pasa la lista de jugadores
-      this.partida.jugadoresParaRobar.clear();
-      this.partida.jugadoresParaRobar.push(...jugadoresInvolucrados);
-
-
-      //? Entramos a fase especial para decidir a quien robar
-
-      this.partida.faseJuego = FaseJuego.ROBO;
+    msgCartaCaballero: (client: Client, mensaje: { h: number, d: number }) => {
+      this.responderAccion(client, this.accionCartaCaballero(client.sessionId, mensaje.h, mensaje.d));
     },
 
-    msgIntercambiarJugador: (
-      client: Client,
-      mensaje: {
+    msgIntercambiarJugador: (client: Client, mensaje: {
         recursoEntregado: string,
         cantidadEntregada: number,
         recursoRecibido: string,
         cantidadRecibida: number,
-      }
-    ) => {
-      //* Verificar que sea el turno del jugador
-      if (this.partida.turnoActual !== client.sessionId) {
-        client.send("error", {
-          mensajeError: "No es tu turno"
-        })
-        return;
-      }
-
-      // * Verificar que estemos en la fase de acciones
-      if (this.partida.faseJuego !== FaseJuego.ACCIONES) {
-        client.send("error", {
-          mensajeError: "Termina de lanzar los dados primero"
-        })
-        return;
-      }
-
-      // * Verificar que no exista una oferta activa
-      if (this.partida.ofertaIntercambio.jugador !== "") {
-        client.send("error", {
-          mensajeError: "Ya existe una oferta activa"
-        })
-        return; 
-      }
-
-      const jugador = this.jugadores.get(client.sessionId);
-
-      // * Verificar que los recursos sean validos
-      if (
-        !jugador.recursos.has(mensaje.recursoEntregado) ||
-        !jugador.recursos.has(mensaje.recursoRecibido)
-      ) {
-        client.send("error", {
-          mensajeError: "Los Recursos seleccionados no son validos"
-        })
-        return;
-      }
-
-      // * Verificar que las cantidades tengan sentido
-      if (mensaje.cantidadEntregada <= 0 || mensaje.cantidadRecibida <= 0) {
-        client.send("error", {
-          mensajeError: "No tienes suficientes recuros, mi loco"
-        })
-        return;
-      }
-
-      // * No se permite pedir y dar lo mismo
-      if (mensaje.recursoEntregado === mensaje.recursoRecibido) {
-        client.send("error", {
-          mensajeError: "No puedes pedir y dar el mismo recurso"
-        })
-        return;
-      }
-
-      // * Llenado de la oferta
-      this.partida.ofertaIntercambio.setOferta(
-        client.sessionId, this.jugadores,
-        mensaje.recursoEntregado, mensaje.cantidadEntregada,
-        mensaje.recursoRecibido, mensaje.cantidadRecibida
-      );
-
-      //* Log de la oferta de intercambio
-      this.broadcast("log", {
-        jugador: this.jugadores.get(client.sessionId)?.nombre,
-        mensaje: " ha hecho una oferta de intercambio"
-      })
-
+      }) => {
+      this.responderAccion(client, this.accionIntercambiarJugador(client.sessionId, mensaje.recursoEntregado, mensaje.cantidadEntregada, mensaje.recursoRecibido, mensaje.cantidadRecibida));
     },
 
-    msgResponderIntercambio: (
-      client: Client,
-      mensaje: { respuesta: number }
-    ) => {
-      // * Verificar que exista una oferta activa
-      if (this.partida.ofertaIntercambio.jugador === "") {
-        client.send("error", {
-          mensajeError: "No hay una oferta activa"
-        })
-        return;
-      }
-
-      // * Verificar que no sea el jugador que la propuso
-      if (!this.partida.ofertaIntercambio.respuestas.has(client.sessionId)) {
-        client.send("error", {
-          mensajeError: "No puedes responde a esta oferta"
-        })
-        return;
-      }
-
-      // * Verificar que el jugador aún deba reponder
-      if (this.partida.ofertaIntercambio.respuestas.get(client.sessionId) !== 0) {
-        client.send("error", {
-          mensajeError: "Ya respondiste a esta oferta"
-        })
-        return;
-      }
-
-      // * Verificar que sea una respueta valida
-      if (mensaje.respuesta !== 1 && mensaje.respuesta !== -1) {
-        client.send("error", {
-          mensajeError: "Respuesta invalida"
-        })
-        return;
-      }
-
-      // ! Rechazo
-      if (mensaje.respuesta === -1) {
-        this.rechazarOferta(client.sessionId);
-        return;
-      }
-
-      const jugador = this.jugadores.get(client.sessionId);
-      const jugadorOferta = this.jugadores.get(this.partida.ofertaIntercambio.jugador);
-
-      // ? Acepto
-      if (mensaje.respuesta === 1) {
-        // * Destruir la ofera si el jugador que propuso ya gastó
-        if (jugadorOferta.recursos.get(
-          this.partida.ofertaIntercambio.recursoOfrecido
-        ) < this.partida.ofertaIntercambio.cantidadOfrecida) {
-          this.partida.ofertaIntercambio.limpiarOferta();
-
-          client.send("error", {
-            mensajeError: "Oferta cancelada, el negociante no tiene ya recursos"
-          })
-
-          return;
-        }
-
-        // * Verificar que el jugadr que acepta tenga suficientes recursos
-        if (jugador.recursos.get(
-          this.partida.ofertaIntercambio.recursoSolicitado
-        ) < this.partida.ofertaIntercambio.cantidadSolicitada) {
-          // * Avisar al jugador por que no se pudo aceptar
-          client.send("error", {
-            mensajeError: "No tienes suficientes recursos para aceptar esta oferta"
-          })
-
-          // * Automaticamente pasarlo a rechazo
-          this.rechazarOferta(client.sessionId);
-          return;
-        }
-
-        // * Intercambiar los recursos
-        intercambiarRecursos(
-          this.partida.ofertaIntercambio.jugador,
-          client.sessionId,
-          this.jugadores,
-          this.partida.ofertaIntercambio
-        );
-
-        //* Log del intercambio de recursos
-        this.broadcast("log", {
-          jugador: this.jugadores.get(client.sessionId)?.nombre,
-          mensaje: " ha aceptado la oferta de intercambio"
-        })
-
-        // * Destruir la oferta
-        this.partida.ofertaIntercambio.limpiarOferta();
-      }
+    msgResponderIntercambio: (client: Client, mensaje: { respuesta: number }) => {
+      this.responderAccion(client, this.accionResponderIntercambio(client.sessionId, mensaje.respuesta));
     },
 
     msgComprarCarta: (client: Client) => {
-        //* Verificar que la partida siga en curso
-        if(this.partida.fase === FasePartida.FINALIZADA){
-            client.send("error", {
-                mensajeError: "La partida ha finalizado"
-            })
-            return;
-        }
-
-        //* Verificar que sea el turno del jugador
-        if(this.partida.turnoActual !== client.sessionId){
-            client.send("error", {
-                mensajeError: "No es tu turno"
-            })
-            return;
-        }
-
-        //* Verificar que estamos en fase de acciones
-        if(this.partida.faseJuego !== FaseJuego.ACCIONES){
-            client.send("error", {
-                mensajeError: "Termina de lanzar los dados primero"
-            })
-            return;
-        }
-
-        //* Intentar comprar la carta
-        const resultado = comprarCarta(
-            this.jugadores.get(client.sessionId), this.banca
-        )
-
-        //* Si no se pudo comprar, notificar error
-        if(resultado.error){
-            client.send("error", {
-                mensajeError: resultado.mensaje
-            })
-            return;    
-        }
-
-        //* Log de la compra de la carta
-        if(!resultado.error){
-            this.broadcast("log", {
-                jugador: this.jugadores.get(client.sessionId)?.nombre,
-                mensaje: resultado.mensaje
-            })
-        }
-
-        //* Verificar si el jugador ha ganado
-        verificarVictoria(this.partida, this.jugadores.get(client.sessionId), client.sessionId, this);
+      this.responderAccion(client, this.accionComprarCarta(client.sessionId));
     },
 
     msgCartaCarreteras: (client: Client) => {
-      // * Verificar que la partida siga en curso
-      if (this.partida.fase === FasePartida.FINALIZADA) {
-        client.send("error", {
-          mensajeError: "La partida ha finalizado"
-        })
-        return;
-      }
-
-      //* Verificar que sea el turno del jugador
-      if (this.partida.turnoActual !== client.sessionId) {
-        client.send("error", {
-          mensajeError: "No es tu turno"
-        })
-        return;
-      }
-
-      //* Verificar que se permita usar carta
-      if(!this.partida.cartaJugable){
-        client.send("error", {
-          mensajeError: "Solo una carta por turno"
-        })
-        return;
-      }
-
-      // * Verificar que estemos en fase de acciones
-      if (this.partida.faseJuego !== FaseJuego.ACCIONES) {
-        client.send("error", {
-          mensajeError: "Termina de lanzar los dados primero"
-        })
-        return;
-      }
-
-      // * Verificar que tenemos la carta usable
-      const jugador = this.jugadores.get(client.sessionId);
-      if (jugador.cartas_usables.get(`${Desarrollo.CARRETERA}`) < 1) {
-        client.send("error", {
-          mensajeError: "No tienes la carta de carreteras"
-        })
-        return;
-      }
-
-      // * Eliminar la carta de carreteras del jugador
-      jugador.cartas_usables.set(
-        `${Desarrollo.CARRETERA}`,
-        jugador.cartas_usables.get(`${Desarrollo.CARRETERA}`) - 1
-      )
-
-      // * Activar el efeco de la carta de carreteras
-      this.partida.carreterasGratis = 2;
-      this.partida.faseJuego = FaseJuego.CARRETERAS;
-
-      // * Desactivar el uso de otra carta este turno
-      this.partida.cartaJugable = false;
-
-      //* Log de la carta de carreteras
-      this.broadcast("log", {
-        jugador: this.jugadores.get(client.sessionId)?.nombre,
-        mensaje: " ha jugado una carta de carreteras"
-      })
+      this.responderAccion(client, this.accionCartaCarreteras(client.sessionId));
     },
 
-    msgCaminoGratis: (
-      client: Client,
-      mensaje: { h: number, d: number, p: number }
-    ) => {
-      // * Verificar que la partida siga en curso
-      if (this.partida.fase === FasePartida.FINALIZADA) {
-        client.send("error", {
-          mensajeError: "La partida ha finalizado"
-        })
-        return;
+    msgCaminoGratis: (client: Client, mensaje: { h: number, d: number, p: number }) => {
+      this.responderAccion(client, this.accionCaminoGratis(client.sessionId, mensaje.h, mensaje.d, mensaje.p));
+    },
+
+    msgCartaAbundancia: (client: Client, mensaje: { recurso1: string, recurso2: string }) => {
+      this.responderAccion(client, this.accionCartaAbundancia(client.sessionId, mensaje.recurso1, mensaje.recurso2));
+    },
+
+    msgCartaMonopolio: (client: Client, mensaje: { recurso: string }) => {
+      this.responderAccion(client, this.accionCartaMonopolio(client.sessionId, mensaje.recurso));
+    },
+
+    msgRobarJugador: (client: Client, mensaje: { jugadorRobado: string }) => {
+      this.responderAccion(client, this.accionRobarJugador(client.sessionId, mensaje.jugadorRobado));
+    },
+    
+  };
+
+  //* Manda al cliente el error de una accion, si lo hubo. Los handlers solo llaman
+  //* a su accion y usan esto; los bots llaman a la accion y leen el resultado
+  responderAccion(client: Client, resultado: ResultadoAccion) {
+    if (resultado.error) {
+      client.send("error", {
+        mensajeError: resultado.mensaje
+      })
+    }
+  }
+
+  accionLanzarDados(sessionId: string): ResultadoAccion {
+    //* Verificar que la partida siga en curso
+    if (this.partida.fase === FasePartida.FINALIZADA) {
+      return fallo("La partida ha finalizado");
+    }
+
+    //* Verificar que sea el turno del jugador
+    if (this.partida.turnoActual !== sessionId) {
+      return fallo("No es tu turno");
+    }
+
+    //* Verificar que estemos en la fase de juego
+    if (this.partida.fase !== FasePartida.JUEGO) {
+      return fallo("No es la fase de juego");
+    }
+
+    //* Verificar que estemos en la fase de lanzar dados
+    if (this.partida.faseJuego !== FaseJuego.DADOS) {
+      return fallo("Ya lanzaste los dados");
+    }
+
+    //* Lanzamiento de dados
+    const { dado1, dado2, suma } = lanzarDados();
+
+    //? Notificar a todos los jugadores el resultado de los dados
+    this.broadcast("dados", {
+      dado1,
+      dado2,
+      suma
+    })
+
+    //! Si sale 7 toda la logica cambia, entramos a fase de robo y/o ladron
+    if (suma === 7) {
+
+      //* Limpiar a los jugadors que deben descartar
+      this.partida.jugadoresParaDescartar.clear();
+
+      //* Ver el total de cartas de cada jugador
+      this.jugadores.forEach((jugador, sessionId) => {
+        let totalRecursos = 0;
+
+        //* contando la cantidad de recursos
+        jugador.recursos.forEach(cantidad => {
+          totalRecursos += cantidad;
+        });
+
+        //* Si tiene mas de 7, debe descartar la mitad
+        if (totalRecursos > 7) {
+          this.partida.jugadoresParaDescartar.set(sessionId, Math.floor(totalRecursos / 2));
+        }
+
+      });
+
+      //*Verificar si alguien tiene descarte, para enviarlo a fase de descarte
+      if (this.partida.jugadoresParaDescartar.size > 0) {
+        this.partida.faseJuego = FaseJuego.DESCARTE
+      } else {
+        this.partida.faseJuego = FaseJuego.LADRON
       }
 
-      // * Verificar que sea el turno del jugador
-      if (this.partida.turnoActual !== client.sessionId) {
-        client.send("error", {
-          mensajeError: "No es tu turno"
-        })
-        return;
+      return exito();
+
+    }
+
+    //* Buscar los hexagonos con dicho numero resultado de la suma de los dados
+    const hexagonosEncontrados = buscarHexagonos(this.tablero.hexagonos, suma);
+
+    //* Dar los recursos de todos los hexagonos a la vez, para saber si la banca alcanza
+    repartirRecursos(
+      hexagonosEncontrados,
+      this.tablero.vertices,
+      this.jugadores,
+      this.banca,
+      this.tablero.ladron
+    );
+    this.partida.faseJuego = FaseJuego.ACCIONES;
+
+    return exito();
+  }
+
+  accionPasarTurno(sessionId: string): ResultadoAccion {
+    //* Verificar que la partida siga en curso
+    if (this.partida.fase === FasePartida.FINALIZADA) {
+      return fallo("La partida ha finalizado");
+    }
+
+    //* Verificar que sea tu turno
+    if (this.partida.turnoActual !== sessionId) {
+      return fallo("No es tu turno");
+    }
+
+    //* Solo se puede pasar turno en fase de acciones
+    if (this.partida.faseJuego !== FaseJuego.ACCIONES) {
+      return fallo("Termina de lanzar los dados primero");
+    }
+
+    //* Log de paso de turno
+    this.broadcast("log", {
+      jugador: this.jugadores.get(sessionId)?.nombre,
+      mensaje: " ha pasado su turno"
+    })
+
+    this.ofertas.clear();
+
+    /** Activar las cartas compradas del jugador */
+    activarCartasCompradas(this.jugadores.get(sessionId));
+
+    /** Permitir usar una carta en el siguiente turno */
+    this.partida.cartaJugable = true;
+
+    //* Cancelar ofertas de intercambio activas
+    this.partida.ofertaIntercambio.limpiarOferta()
+
+    siguienteTurno(this.partida);
+
+    return exito();
+  }
+
+  accionColocarCiudad(sessionId: string, h: number, d: number, p: number): ResultadoAccion {
+    //* Verificar que la partida siga un curso
+    if (this.partida.fase === FasePartida.FINALIZADA) {
+      return fallo("La partida ha finalizado");
+    }
+
+    //*Verificar que sea el turno del jugador
+    if (this.partida.turnoActual !== sessionId) {
+      return fallo("No es tu turno");
+    }
+
+    //* Verificar que estemos en la fase de juego
+    if (this.partida.fase !== FasePartida.JUEGO) {
+      return fallo("No es la fase de juego");
+    }
+
+    //* Verificar que estemos en la fase de acciones
+    if (this.partida.faseJuego !== FaseJuego.ACCIONES) {
+      return fallo("Debes lanzar los dados primero");
+    }
+
+    //* Obtener el jugador del state y que exista
+    const jugador = this.jugadores.get(sessionId);
+    if (!jugador) return exito();
+
+    //* Intentar construir la ciudad
+    const resultado = construirCiudad(
+      this.tablero.vertices,
+      h, d, p,
+      jugador, this.banca, sessionId
+    )
+
+    //* Si no se pudo construir, se notifica el error
+    if (resultado.error) {
+      return fallo(resultado.mensaje);
+    }
+
+    //* Log de la construccion de la ciudad
+    if(!resultado.error){
+      this.broadcast("log", {
+        jugador: this.jugadores.get(sessionId)?.nombre,
+        mensaje: resultado.mensaje
+      })
+    }
+
+    //* Verificar si el jugador ha ganado
+    verificarVictoria(this.partida, jugador, sessionId, this);
+
+    return exito();
+  }
+
+  accionColocarAsentamiento(sessionId: string, h: number, d: number, p: number): ResultadoAccion {
+    //* Verificar que la partida siga en curso
+    if (this.partida.fase === FasePartida.FINALIZADA) {
+      return fallo("La partida ha finalizado");
+    }
+
+    //*Verificar que el turno sea del jugador 
+    if (this.partida.turnoActual !== sessionId) {
+      return fallo("No es tu turno");
+    }
+
+    const jugador = this.jugadores.get(sessionId);
+    if (!jugador) return exito();
+
+    //! FLUJO DE LA FASE PRECONSTRUCCION
+    if (this.partida.fase === FasePartida.PRECONSTRUCCION) {
+      //* Comprobar que estamos en la fase de colocar asentamiento
+      if (this.partida.fasePreconstruccion !== FasePreconstruccion.ASENTAMIENTO) {
+        return fallo("Debes colocar un camino");
       }
 
-      // * Verificar que estemos en la fase de carretera
-      if (this.partida.faseJuego !== FaseJuego.CARRETERAS) {
-        client.send("error", {
-          mensajeError: "No es la fase de carreteras"
-        })
-        return;
-      }
-
-      // * Obtener al jugador del state y que exista
-      const jugador = this.jugadores.get(client.sessionId);
-      if (!jugador) return;
-      const { h, d, p } = mensaje;
-
-      // * Intentar construir el camino gratis
-      const resultado = construirCamino(
+      //* Intentar construir el asentamiento
+      const resultado = construirAsentamiento(
         this.tablero.vertices,
         this.tablero.aristas,
         this.partida,
         h, d, p,
-        jugador, this.banca, client.sessionId
-      )
+        jugador,
+        this.banca,
+        sessionId)
 
-      // * Si no se pudo construir, se notifica el error
-      if (resultado.error && resultado.mensaje !== "No tienes caminos disponibles") {
-        client.send("error", {
-          mensajeError: resultado.mensaje
-        })
-        return;
-      }
-
-      // * Reducir la cantidad de caminos gratis restantes
-      this.partida.carreterasGratis -= 1;
-
-      // * Si ya no quedan caminos gratis, volver a fase de acciones
-      if (this.partida.carreterasGratis === 0) {
-        this.partida.faseJuego = FaseJuego.ACCIONES
-      }
-    },
-
-    msgCartaAbundancia: (
-      client: Client,
-      mensaje: { recurso1: string, recurso2: string }
-    ) => {
-      //* Verificar que la partida siga en curso
-      if (this.partida.fase === FasePartida.FINALIZADA) {
-        client.send("error", {
-          mensajeError: "La partida ha finalizado"
-        })
-        return;
-      }
-
-      //* Verificar que sea el turno del jugador
-      if (this.partida.turnoActual !== client.sessionId) {
-        client.send("error", {
-          mensajeError: "No es tu turno"
-        })
-        return;
-      }
-
-      //* Verificar que estamos en fase de acciones
-      if (this.partida.faseJuego !== FaseJuego.ACCIONES) {
-        client.send("error", {
-          mensajeError: "Termina de lanzar los dados primero"
-        })
-        return;
-      }
-
-
-      //* Verificar si se permite usar carta
-      if (!this.partida.cartaJugable) {
-        client.send("error", {
-          mensajeError: "solo una carta por turno"
-        })
-        return;
-      }
-
-      //* Verificar que tenga la carta de abundancia
-      const jugador = this.jugadores.get(client.sessionId);
-      if (jugador.cartas_usables.get(`${Desarrollo.ABUNDANCIA}`) < 1) {
-        client.send("error", {
-          mensajeError: "No tienes la carta de abundancia"
-        })
-        return;
-      }
-
-
-      //* Intentar jugar la carta de abundancia
-      const resultado = jugarAbundancia(
-        jugador, this.banca, mensaje.recurso1, mensaje.recurso2
-      );
-
-      //* Si no puede jugar, notificar error
       if (resultado.error) {
-        client.send("error", {
-          mensajeError: resultado.mensaje
-        })
-        return;
+        return fallo(resultado.mensaje);
       }
 
-      //* Log de la carta de abundancia
+      //* Log de la construccion del asentamiento
       if(!resultado.error){
         this.broadcast("log", {
-          jugador: this.jugadores.get(client.sessionId)?.nombre,
+          jugador: this.jugadores.get(sessionId)?.nombre,
           mensaje: resultado.mensaje
         })
       }
 
-      //* Marcar que ya se utilizo una carta en este turno
-      this.partida.cartaJugable = false;
+      //* Si estamos en vuelta de regreso de la preconstruccion
+      if (this.partida.direccionPreconstruccion === -1) {
+        darMaterialInicial(this.tablero.hexagonos, jugador, h, d, p, this.banca);
+      }
 
-    },
+      this.partida.fasePreconstruccion = FasePreconstruccion.CAMINO;
+      return exito();
 
-    msgCartaMonopolio: (
-      client: Client,
-      mensaje: { recurso: string }
-    ) => {
+    }
+
+    //!FLUJO EN JUEGO
+    if (this.partida.fase == FasePartida.JUEGO) {
+      //* Comprobar que estamos en la fase de acciones
+      if (this.partida.faseJuego !== FaseJuego.ACCIONES) {
+        return fallo("Debes lanzar los dados primero");
+      }
+
+      //* Intentar construir asentamiento
+      const resultado = construirAsentamiento(
+        this.tablero.vertices,
+        this.tablero.aristas,
+        this.partida,
+        h, d, p,
+        jugador,
+        this.banca,
+        sessionId
+      )
+
+      //* Si algo fallo en la construccion, indicar el error
+      if (resultado.error) {
+        return fallo(resultado.mensaje);
+      }
+
+      //* Log de la construccion del asentamiento
+      if(!resultado.error){
+        this.broadcast("log", {
+          jugador: this.jugadores.get(sessionId)?.nombre,
+          mensaje: resultado.mensaje
+        })
+      }
+
+      //* Verificar si el jugador ha ganado
+      verificarVictoria(this.partida, jugador, sessionId, this);
+    }
+
+    return exito();
+  }
+
+  accionColocarCamino(sessionId: string, h: number, d: number, p: number): ResultadoAccion {
+
+    //* Verificar que la partida siga en curso
+    if (this.partida.fase === FasePartida.FINALIZADA) {
+      return fallo("La partida ha finalizado");
+    }
+
+    //* Verificar que sea el turno del jugador
+    if (this.partida.turnoActual !== sessionId) {
+      return fallo("No es tu turno");
+    }
+
+    //* Obtener el jugador del state y que exista
+    const jugador = this.jugadores.get(sessionId);
+    if (!jugador) return exito();
+
+
+    //! FLUJO EN PRECONSTRUCCION
+    if (this.partida.fase === FasePartida.PRECONSTRUCCION) {
+
+      //* Comprobar que estemos en la fase de colocar camino
+      if (this.partida.fasePreconstruccion !== FasePreconstruccion.CAMINO) {
+        return fallo("Coloca primero un asentamiento");
+      }
+
+      //* Intentar construir el camino
+      const resultado = construirCamino(
+        this.tablero.vertices, this.tablero.aristas, this.partida,
+        h, d, p, jugador, this.banca, sessionId
+      )
+
+      //* Si no se pudo construir, se notifica el error
+      if (resultado.error) {
+        return fallo(resultado.mensaje);
+      }
+
+      //* Log de la construccion del camino
+      if(!resultado.error){
+        this.broadcast("log", {
+          jugador: this.jugadores.get(sessionId)?.nombre,
+          mensaje: resultado.mensaje
+        })
+      }
+
+      //? Ahora le toca al siguiente jugador poner un asentamiento
+      this.partida.fasePreconstruccion = FasePreconstruccion.ASENTAMIENTO;
+      siguienteTurnoPreconstruccion(this.partida);
+      return exito();
+    }
+
+    //! FLUJO EN JUEGO
+    if (this.partida.fase === FasePartida.JUEGO) {
+
+      //* Comprobar que estemos en la fase de acciones
+      if (this.partida.faseJuego !== FaseJuego.ACCIONES) {
+        return fallo("Debes lanzar los dados primero");
+      }
+
+      //* Intentar construir el camino
+      const resultado = construirCamino(
+        this.tablero.vertices, this.tablero.aristas, this.partida,
+        h, d, p, jugador, this.banca, sessionId
+      )
+
+      //* Si no se pudo construir, se notifica el error
+      if (resultado.error) {
+        return fallo(resultado.mensaje);
+      }
+
+      //* Log de la construccion del camino
+      if(!resultado.error){
+        this.broadcast("log", {
+          jugador: this.jugadores.get(sessionId)?.nombre,
+          mensaje: resultado.mensaje
+        })
+      }
+    }
+
+    return exito();
+  }
+
+  accionComprarCarta(sessionId: string): ResultadoAccion {
       //* Verificar que la partida siga en curso
-      if (this.partida.fase === FasePartida.FINALIZADA) {
-        client.send("error", {
-          mensajeError: "La partida ha finalizado"
-        });
-        return;
+      if(this.partida.fase === FasePartida.FINALIZADA){
+          return fallo("La partida ha finalizado");
       }
 
       //* Verificar que sea el turno del jugador
-      if (this.partida.turnoActual !== client.sessionId) {
-        client.send("error", {
-          mensajeError: "No es tu turno"
-        });
-        return;
+      if(this.partida.turnoActual !== sessionId){
+          return fallo("No es tu turno");
       }
 
       //* Verificar que estamos en fase de acciones
-      if (this.partida.faseJuego !== FaseJuego.ACCIONES) {
-        client.send("error", {
-          mensajeError: "Termina de lanzar los dados primero"
-        });
-        return;
+      if(this.partida.faseJuego !== FaseJuego.ACCIONES){
+          return fallo("Termina de lanzar los dados primero");
       }
 
-      //* Verificar que se permite usar carta
-      if (!this.partida.cartaJugable) {
-        client.send("error", {
-          mensajeError: "Solo una carta por turno"
-        });
-        return;
+      //* Intentar comprar la carta
+      const resultado = comprarCarta(
+          this.jugadores.get(sessionId), this.banca
+      )
+
+      //* Si no se pudo comprar, notificar error
+      if(resultado.error){
+          return fallo(resultado.mensaje);    
       }
 
-      //* Verificar que tenga la carta de monopolio
-      const jugador = this.jugadores.get(client.sessionId);
-
-      if (jugador.cartas_usables.get(`${Desarrollo.MONOPOLIO}`) < 1) {
-        client.send("error", {
-          mensajeError: "No tienes la carta de monopolio"
-        });
-        return;
+      //* Log de la compra de la carta
+      if(!resultado.error){
+          this.broadcast("log", {
+              jugador: this.jugadores.get(sessionId)?.nombre,
+              mensaje: resultado.mensaje
+          })
       }
 
-      //* Intentar jugar la carta de monopolio
-      const resultado = jugarMonopolio(
+      //* Verificar si el jugador ha ganado
+      verificarVictoria(this.partida, this.jugadores.get(sessionId), sessionId, this);
+
+    return exito();
+  }
+
+  accionCaminoGratis(sessionId: string, h: number, d: number, p: number): ResultadoAccion {
+    // * Verificar que la partida siga en curso
+    if (this.partida.fase === FasePartida.FINALIZADA) {
+      return fallo("La partida ha finalizado");
+    }
+
+    // * Verificar que sea el turno del jugador
+    if (this.partida.turnoActual !== sessionId) {
+      return fallo("No es tu turno");
+    }
+
+    // * Verificar que estemos en la fase de carretera
+    if (this.partida.faseJuego !== FaseJuego.CARRETERAS) {
+      return fallo("No es la fase de carreteras");
+    }
+
+    // * Obtener al jugador del state y que exista
+    const jugador = this.jugadores.get(sessionId);
+    if (!jugador) return exito();
+
+    // * Intentar construir el camino gratis
+    const resultado = construirCamino(
+      this.tablero.vertices,
+      this.tablero.aristas,
+      this.partida,
+      h, d, p,
+      jugador, this.banca, sessionId
+    )
+
+    // * Si no se pudo construir, se notifica el error
+    if (resultado.error && resultado.mensaje !== "No tienes caminos disponibles") {
+      return fallo(resultado.mensaje);
+    }
+
+    // * Reducir la cantidad de caminos gratis restantes
+    this.partida.carreterasGratis -= 1;
+
+    // * Si ya no quedan caminos gratis, volver a fase de acciones
+    if (this.partida.carreterasGratis === 0) {
+      this.partida.faseJuego = FaseJuego.ACCIONES
+    }
+
+    return exito();
+  }
+
+  accionDescartarRecursos(sessionId: string, recurso: string): ResultadoAccion {
+    //* Verificar si estamos en fase de descarte
+    if (this.partida.faseJuego !== FaseJuego.DESCARTE) {
+      return fallo("No es la fase de descarte");
+    }
+
+    //* Verificar si el jugador esta en la lista de descarte
+    if (!this.partida.jugadoresParaDescartar.has(sessionId)) {
+      return fallo("No tienes que descartar");
+    }
+
+    //* Encontrar al jugador que debe descartar
+    const jugadorPorDescartar = sessionId;
+
+    //* Intentar descartar
+    const resultado = descartarRecurso(
+      this.jugadores.get(jugadorPorDescartar),
+      this.banca,
+      recurso
+    );
+
+
+    //*Error en descarte
+    if (resultado.error) {
+      return fallo(resultado.mensaje);
+    }
+
+
+    //*Actualizar la cantidad de recursos que le faltan por descartar
+    this.partida.jugadoresParaDescartar.set(
+      jugadorPorDescartar,
+      this.partida.jugadoresParaDescartar.get(jugadorPorDescartar) - 1
+    );
+
+    //* Eliminarlo de la lista si ya no tiene que descartar
+    if (this.partida.jugadoresParaDescartar.get(jugadorPorDescartar) === 0) {
+      this.partida.jugadoresParaDescartar.delete(jugadorPorDescartar);
+      //* Log de terminacion de descarte
+      this.broadcast("log", {
+        jugador: this.jugadores.get(sessionId)?.nombre,
+        mensaje: " ha terminado de descartar"
+      })
+    }
+
+    //* Verificar si ya no hay jugadores que deben descartar, para pasar a fase de ladron
+    if (this.partida.jugadoresParaDescartar.size == 0) {
+      this.partida.faseJuego = FaseJuego.LADRON;
+      //* Log de todos descartaron
+      this.broadcast("log", {
+        jugador: "Sistema: ",
+        mensaje: "Todos los jugadores han terminado de descartar"
+      })
+      return exito();
+    }
+
+    return exito();
+  }
+
+  accionMoverLadron(sessionId: string, h: number, d: number): ResultadoAccion {
+    //* Verificar que sea el turno del jugador
+    if (this.partida.turnoActual !== sessionId) {
+      return fallo("No es tu turno");
+    }
+
+    //*Verificar que estemos en la fase de juego
+    if (this.partida.fase !== FasePartida.JUEGO) {
+      return fallo("No es la fase de juego");
+    }
+
+    //* Verificar que estemos en la fase de mover al ladron
+    if (this.partida.faseJuego !== FaseJuego.LADRON) {
+      return fallo("No es la fase de mover al ladron");
+    }
+
+
+    //* Mover al ladron y obtener los jugadores involucrados
+    const resultado = moverLadron(
+      this.tablero,
+      this.jugadores,
+      sessionId,
+      h, d
+    );
+
+    if (resultado.error) {
+      return fallo(resultado.mensaje);
+    }
+
+    //* Log de movimiento del ladron
+    if(!resultado.error){
+      this.broadcast("log", {
+        jugador: this.jugadores.get(sessionId)?.nombre,
+        mensaje: resultado.mensaje
+      })
+    }
+
+    //*Extraemos los jugadores involucrados en el robo
+    const jugadoresinvolucrados = resultado.jugadoresInvolucrados;
+
+    //* Si no hay jugadores pasamos a las acciones
+    if (jugadoresinvolucrados.length === 0) {
+      this.partida.faseJuego = FaseJuego.ACCIONES;
+      return exito();
+    }
+
+    //*Si solo hubo un jugador, se le roba automaticamente
+    if (jugadoresinvolucrados.length === 1) {
+      robarJugador(
+        this.jugadores.get(sessionId),
+        this.jugadores.get(jugadoresinvolucrados[0])
+      )
+      this.partida.faseJuego = FaseJuego.ACCIONES;
+
+      //* Log del robo automatico
+      this.broadcast("log", {
+        jugador: this.jugadores.get(sessionId)?.nombre,
+        mensaje: ` ha robado un recurso a ${this.jugadores.get(jugadoresinvolucrados[0])?.nombre}`
+      })
+      return exito();
+    }
+
+    //* Si hay 2 o mas jugadores involucrados, se pasa la lista de jugadores
+    this.partida.jugadoresParaRobar.clear();
+    this.partida.jugadoresParaRobar.push(...jugadoresinvolucrados);
+
+
+    this.partida.faseJuego = FaseJuego.ROBO
+
+    return exito();
+  }
+
+  accionCartaCaballero(sessionId: string, h: number, d: number): ResultadoAccion {
+    //* Verificar que la partida siga en curso
+    if (this.partida.fase === FasePartida.FINALIZADA) {
+      return fallo("La partida ha finalizado");
+    }
+
+    //* Verificar que sea el turno del jugador
+    if (this.partida.turnoActual !== sessionId) {
+      return fallo("No es tu turno");
+    }
+
+    //* Verificar si estamos en la fase de acciones
+    if (this.partida.faseJuego !== FaseJuego.ACCIONES) {
+      return fallo("Termina de lanzar los dados primero");
+    }
+
+
+    //* Verificar que se permita usar carta
+    if (!this.partida.cartaJugable) {
+      return fallo("Solo una carta por turno");
+    }
+
+
+    //* Verificar que el jugador tenga la carta de caballero
+    const jugador = this.jugadores.get(sessionId);
+    if (jugador.cartas_usables.get(`${Desarrollo.CABALLERO}`) < 1) {
+      return fallo("No tienes la carta de caballero");
+    }
+
+    //* Mover al ladron y obtener los jugadores involucrados
+    const resultado = moverLadron(
+      this.tablero,
+      this.jugadores,
+      sessionId,
+      h, d);
+
+
+    //* Si no se puede mover el ladron, notificar error
+    if (resultado.error) {
+      return fallo(resultado.mensaje);
+    }
+
+    //* Log del uso de la carta de caballero
+    this.broadcast("log", {
+      jugador: this.jugadores.get(sessionId)?.nombre,
+      mensaje: " ha jugado una carta de caballero"
+    })
+
+    //* Eliminar la carta de caballero del jugador
+    jugarCaballero(this.jugadores, sessionId, this.partida, this); 
+
+    //* Verificar si el jugador ha ganado
+    verificarVictoria(this.partida, jugador, sessionId, this);
+    
+    //* Deshabilitar el uso de otra carta este turno
+    this.partida.cartaJugable = false;     
+
+    //* Extraemos los jugadores involucrados en el robo
+    const jugadoresInvolucrados = resultado.jugadoresInvolucrados;
+
+    //* Si no hay jugadores, pasamos a las ACCIONES
+    if (jugadoresInvolucrados.length == 0) {
+      this.partida.faseJuego = FaseJuego.ACCIONES;
+      return exito();
+    }
+
+    //* Si solo hubo un jugador, se le roba automaticamente
+    if (jugadoresInvolucrados.length === 1) {
+      robarJugador(
+        this.jugadores.get(sessionId),
+        this.jugadores.get(jugadoresInvolucrados[0])
+      )
+      this.partida.faseJuego = FaseJuego.ACCIONES;
+      return exito();
+    }
+
+    //* Si hay 2 o mas jugadores involucrados, se pasa la lista de jugadores
+    this.partida.jugadoresParaRobar.clear();
+    this.partida.jugadoresParaRobar.push(...jugadoresInvolucrados);
+
+
+    //? Entramos a fase especial para decidir a quien robar
+
+    this.partida.faseJuego = FaseJuego.ROBO;
+
+    return exito();
+  }
+
+  accionRobarJugador(sessionId: string, jugadorRobado: string): ResultadoAccion {
+    //* Verificar que la partida siga en curso
+    if (this.partida.fase === FasePartida.FINALIZADA) {
+      return fallo("La partida ha finalizado");
+    }
+
+    //* Verificar que sea el turno del jugador
+    if (this.partida.turnoActual !== sessionId) {
+      return fallo("No es tu turno");
+    }
+
+    //* Verificar que estemos en la fase de robar
+    if (this.partida.faseJuego !== FaseJuego.ROBO) {
+      return fallo("No es la fase de robar");
+    }
+
+
+    //* Verificar que el jugador elegido este en la lista de robo
+    if(!this.partida.jugadoresParaRobar.includes(jugadorRobado)){
+      return fallo("El jugador elegido no esta en la lista de robo");
+    }
+
+    //* Robar un recurso al azar al jugador elegido
+
+    robarJugador(this.jugadores.get(sessionId), this.jugadores.get(jugadorRobado));
+
+    //* Log del robo
+    this.broadcast("log", {
+      jugador: this.jugadores.get(sessionId)?.nombre,
+      mensaje: ` ha robado un recurso a ${this.jugadores.get(jugadorRobado)?.nombre}`
+    })
+
+    //* Limpiar Lista y volver a acciones
+    this.partida.jugadoresParaRobar.clear();
+    this.partida.faseJuego = FaseJuego.ACCIONES;
+
+    return exito();
+  }
+
+  accionCartaCarreteras(sessionId: string): ResultadoAccion {
+    // * Verificar que la partida siga en curso
+    if (this.partida.fase === FasePartida.FINALIZADA) {
+      return fallo("La partida ha finalizado");
+    }
+
+    //* Verificar que sea el turno del jugador
+    if (this.partida.turnoActual !== sessionId) {
+      return fallo("No es tu turno");
+    }
+
+    //* Verificar que se permita usar carta
+    if(!this.partida.cartaJugable){
+      return fallo("Solo una carta por turno");
+    }
+
+    // * Verificar que estemos en fase de acciones
+    if (this.partida.faseJuego !== FaseJuego.ACCIONES) {
+      return fallo("Termina de lanzar los dados primero");
+    }
+
+    // * Verificar que tenemos la carta usable
+    const jugador = this.jugadores.get(sessionId);
+    if (jugador.cartas_usables.get(`${Desarrollo.CARRETERA}`) < 1) {
+      return fallo("No tienes la carta de carreteras");
+    }
+
+    // * Eliminar la carta de carreteras del jugador
+    jugador.cartas_usables.set(
+      `${Desarrollo.CARRETERA}`,
+      jugador.cartas_usables.get(`${Desarrollo.CARRETERA}`) - 1
+    )
+
+    // * Activar el efeco de la carta de carreteras
+    this.partida.carreterasGratis = 2;
+    this.partida.faseJuego = FaseJuego.CARRETERAS;
+
+    // * Desactivar el uso de otra carta este turno
+    this.partida.cartaJugable = false;
+
+    //* Log de la carta de carreteras
+    this.broadcast("log", {
+      jugador: this.jugadores.get(sessionId)?.nombre,
+      mensaje: " ha jugado una carta de carreteras"
+    })
+
+    return exito();
+  }
+
+  accionCartaAbundancia(sessionId: string, recurso1: string, recurso2: string): ResultadoAccion {
+    //* Verificar que la partida siga en curso
+    if (this.partida.fase === FasePartida.FINALIZADA) {
+      return fallo("La partida ha finalizado");
+    }
+
+    //* Verificar que sea el turno del jugador
+    if (this.partida.turnoActual !== sessionId) {
+      return fallo("No es tu turno");
+    }
+
+    //* Verificar que estamos en fase de acciones
+    if (this.partida.faseJuego !== FaseJuego.ACCIONES) {
+      return fallo("Termina de lanzar los dados primero");
+    }
+
+
+    //* Verificar si se permite usar carta
+    if (!this.partida.cartaJugable) {
+      return fallo("solo una carta por turno");
+    }
+
+    //* Verificar que tenga la carta de abundancia
+    const jugador = this.jugadores.get(sessionId);
+    if (jugador.cartas_usables.get(`${Desarrollo.ABUNDANCIA}`) < 1) {
+      return fallo("No tienes la carta de abundancia");
+    }
+
+
+    //* Intentar jugar la carta de abundancia
+    const resultado = jugarAbundancia(
+      jugador, this.banca, recurso1, recurso2
+    );
+
+    //* Si no puede jugar, notificar error
+    if (resultado.error) {
+      return fallo(resultado.mensaje);
+    }
+
+    //* Log de la carta de abundancia
+    if(!resultado.error){
+      this.broadcast("log", {
+        jugador: this.jugadores.get(sessionId)?.nombre,
+        mensaje: resultado.mensaje
+      })
+    }
+
+    //* Marcar que ya se utilizo una carta en este turno
+    this.partida.cartaJugable = false;
+
+    return exito();
+  }
+
+  accionCartaMonopolio(sessionId: string, recurso: string): ResultadoAccion {
+    //* Verificar que la partida siga en curso
+    if (this.partida.fase === FasePartida.FINALIZADA) {
+      return fallo("La partida ha finalizado");
+    }
+
+    //* Verificar que sea el turno del jugador
+    if (this.partida.turnoActual !== sessionId) {
+      return fallo("No es tu turno");
+    }
+
+    //* Verificar que estamos en fase de acciones
+    if (this.partida.faseJuego !== FaseJuego.ACCIONES) {
+      return fallo("Termina de lanzar los dados primero");
+    }
+
+    //* Verificar que se permite usar carta
+    if (!this.partida.cartaJugable) {
+      return fallo("Solo una carta por turno");
+    }
+
+    //* Verificar que tenga la carta de monopolio
+    const jugador = this.jugadores.get(sessionId);
+
+    if (jugador.cartas_usables.get(`${Desarrollo.MONOPOLIO}`) < 1) {
+      return fallo("No tienes la carta de monopolio");
+    }
+
+    //* Intentar jugar la carta de monopolio
+    const resultado = jugarMonopolio(
+      this.jugadores,
+      sessionId,
+      recurso
+    );
+
+    //* Si no se pudo jugar, notificar error
+    if (resultado.error) {
+      return fallo(resultado.mensaje);
+    }
+
+    //* Log de la carta de monopolio
+    if(!resultado.error){
+      this.broadcast("log", { 
+        jugador: this.jugadores.get(sessionId)?.nombre,
+        mensaje: resultado.mensaje
+      })
+    }
+
+    //* Marcar que ya se utilizo una carta en este turno
+    this.partida.cartaJugable = false;
+
+    return exito();
+  }
+
+  accionIntercambiarBanca(sessionId: string, recursoEntregado: string, recursoRecibido: string): ResultadoAccion {
+    //* Verificar que sea el turno del jugador
+    if (this.partida.turnoActual !== sessionId) {
+      return fallo("No es tu turno");
+    }
+
+    //* Verificar que estemos en la fase de acciones
+    if (this.partida.faseJuego !== FaseJuego.ACCIONES) {
+      return fallo("Termian de lanzar los dados primero");
+    }
+
+    //* Intentar realizar el intercambio con la banca
+    const resultado = comerciarBanca(
+      this.jugadores.get(sessionId), this.banca, sessionId,
+      this.tablero.vertices, this.tablero.puertos,
+      recursoEntregado, recursoRecibido
+    );
+
+    //* Si el intercambio fallo, notificar error
+    if (resultado.error) {
+      return fallo(resultado.mensaje);
+    }
+
+    //* Log del intecambio con la banca
+    if(!resultado.error){
+      this.broadcast("log", {
+        jugador: this.jugadores.get(sessionId)?.nombre,
+        mensaje: resultado.mensaje
+      })
+    }
+
+    return exito();
+  }
+
+  accionIntercambiarJugador(sessionId: string, recursoEntregado: string, cantidadEntregada: number, recursoRecibido: string, cantidadRecibida: number): ResultadoAccion {
+    //* Verificar que sea el turno del jugador
+    if (this.partida.turnoActual !== sessionId) {
+      return fallo("No es tu turno");
+    }
+
+    // * Verificar que estemos en la fase de acciones
+    if (this.partida.faseJuego !== FaseJuego.ACCIONES) {
+      return fallo("Termina de lanzar los dados primero");
+    }
+
+    // * Verificar que no exista una oferta activa
+    if (this.partida.ofertaIntercambio.jugador !== "") {
+      return fallo("Ya existe una oferta activa"); 
+    }
+
+    const jugador = this.jugadores.get(sessionId);
+
+    // * Verificar que los recursos sean validos
+    if (
+      !jugador.recursos.has(recursoEntregado) ||
+      !jugador.recursos.has(recursoRecibido)
+    ) {
+      return fallo("Los Recursos seleccionados no son validos");
+    }
+
+    // * Verificar que las cantidades tengan sentido
+    if (cantidadEntregada <= 0 || cantidadRecibida <= 0) {
+      return fallo("No tienes suficientes recuros, mi loco");
+    }
+
+    // * No se permite pedir y dar lo mismo
+    if (recursoEntregado === recursoRecibido) {
+      return fallo("No puedes pedir y dar el mismo recurso");
+    }
+
+    // * Llenado de la oferta
+    this.partida.ofertaIntercambio.setOferta(
+      sessionId, this.jugadores,
+      recursoEntregado, cantidadEntregada,
+      recursoRecibido, cantidadRecibida
+    );
+
+    //* Log de la oferta de intercambio
+    this.broadcast("log", {
+      jugador: this.jugadores.get(sessionId)?.nombre,
+      mensaje: " ha hecho una oferta de intercambio"
+    })
+
+    return exito();
+  }
+
+  accionResponderIntercambio(sessionId: string, respuesta: number): ResultadoAccion {
+    // * Verificar que exista una oferta activa
+    if (this.partida.ofertaIntercambio.jugador === "") {
+      return fallo("No hay una oferta activa");
+    }
+
+    // * Verificar que no sea el jugador que la propuso
+    if (!this.partida.ofertaIntercambio.respuestas.has(sessionId)) {
+      return fallo("No puedes responde a esta oferta");
+    }
+
+    // * Verificar que el jugador aún deba reponder
+    if (this.partida.ofertaIntercambio.respuestas.get(sessionId) !== 0) {
+      return fallo("Ya respondiste a esta oferta");
+    }
+
+    // * Verificar que sea una respueta valida
+    if (respuesta !== 1 && respuesta !== -1) {
+      return fallo("Respuesta invalida");
+    }
+
+    // ! Rechazo
+    if (respuesta === -1) {
+      this.rechazarOferta(sessionId);
+      return exito();
+    }
+
+    const jugador = this.jugadores.get(sessionId);
+    const jugadorOferta = this.jugadores.get(this.partida.ofertaIntercambio.jugador);
+
+    // ? Acepto
+    if (respuesta === 1) {
+      // * Destruir la ofera si el jugador que propuso ya gastó
+      if (jugadorOferta.recursos.get(
+        this.partida.ofertaIntercambio.recursoOfrecido
+      ) < this.partida.ofertaIntercambio.cantidadOfrecida) {
+        this.partida.ofertaIntercambio.limpiarOferta();
+
+        return fallo("Oferta cancelada, el negociante no tiene ya recursos");
+      }
+
+      // * Verificar que el jugadr que acepta tenga suficientes recursos
+      if (jugador.recursos.get(
+        this.partida.ofertaIntercambio.recursoSolicitado
+      ) < this.partida.ofertaIntercambio.cantidadSolicitada) {
+        // * Automaticamente pasarlo a rechazo
+        this.rechazarOferta(sessionId);
+
+        // * Avisar al jugador por que no se pudo aceptar
+        return fallo("No tienes suficientes recursos para aceptar esta oferta");
+      }
+
+      // * Intercambiar los recursos
+      intercambiarRecursos(
+        this.partida.ofertaIntercambio.jugador,
+        sessionId,
         this.jugadores,
-        client.sessionId,
-        mensaje.recurso
+        this.partida.ofertaIntercambio
       );
 
-      //* Si no se pudo jugar, notificar error
-      if (resultado.error) {
-        client.send("error", {
-          mensajeError: resultado.mensaje
-        });
-        return;
-      }
-
-      //* Log de la carta de monopolio
-      if(!resultado.error){
-        this.broadcast("log", { 
-          jugador: this.jugadores.get(client.sessionId)?.nombre,
-          mensaje: resultado.mensaje
-        })
-      }
-
-      //* Marcar que ya se utilizo una carta en este turno
-      this.partida.cartaJugable = false;
-    },
-
-    msgRobarJugador: (
-      client: Client,
-      mensaje: { jugadorRobado: string}
-    ) => {
-      //* Verificar que la partida siga en curso
-      if (this.partida.fase === FasePartida.FINALIZADA) {
-        client.send("error", {
-          mensajeError: "La partida ha finalizado"
-        })
-        return;
-      }
-
-      //* Verificar que sea el turno del jugador
-      if (this.partida.turnoActual !== client.sessionId) {
-        client.send("error", {
-          mensajeError: "No es tu turno"
-        })
-        return;
-      }
-
-      //* Verificar que estemos en la fase de robar
-      if (this.partida.faseJuego !== FaseJuego.ROBO) {
-        client.send("error", {
-          mensajeError: "No es la fase de robar"
-        })
-        return;
-      }
-
-
-      //* Verificar que el jugador elegido este en la lista de robo
-      if(!this.partida.jugadoresParaRobar.includes(mensaje.jugadorRobado)){
-        client.send("error", {
-          mensajeError: "El jugador elegido no esta en la lista de robo"
-        })
-        return;
-      }
-
-      //* Robar un recurso al azar al jugador elegido
-
-      robarJugador(this.jugadores.get(client.sessionId), this.jugadores.get(mensaje.jugadorRobado));
-
-      //* Log del robo
+      //* Log del intercambio de recursos
       this.broadcast("log", {
-        jugador: this.jugadores.get(client.sessionId)?.nombre,
-        mensaje: ` ha robado un recurso a ${this.jugadores.get(mensaje.jugadorRobado)?.nombre}`
+        jugador: this.jugadores.get(sessionId)?.nombre,
+        mensaje: " ha aceptado la oferta de intercambio"
       })
 
-      //* Limpiar Lista y volver a acciones
-      this.partida.jugadoresParaRobar.clear();
-      this.partida.faseJuego = FaseJuego.ACCIONES;
+      // * Destruir la oferta
+      this.partida.ofertaIntercambio.limpiarOferta();
     }
-    
-  };
+
+    return exito();
+  }
 
   //* Registrar el rechazo de un jugador a la oferta activa y cancelarla si todos rechazaron
   rechazarOferta(sessionId: string) {
