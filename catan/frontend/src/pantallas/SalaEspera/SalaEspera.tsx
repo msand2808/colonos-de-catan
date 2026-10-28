@@ -132,11 +132,12 @@ function SalaEspera({
                           </IconButton>
                         )}
                         <Avatar sx={{ bgcolor: COLORES[i % COLORES.length], width: 52, height: 52 }}>
-                          {iniciales(jugador.nombre || jugador.sessionId)}
+                          {jugador.esBot ? "🤖" : iniciales(jugador.nombre || jugador.sessionId)}
                         </Avatar>
                         <span className="fw-bold small text-truncate mw-100" title={jugador.nombre}>
                           {jugador.nombre}
                         </span>
+                        {jugador.esBot && <Chip label="Bot" color="secondary" size="small" />}
                         {jugador.esUsuarioActual && <Chip label="Tú" color="info" size="small" />}
                       </CardContent>
                     </Card>
