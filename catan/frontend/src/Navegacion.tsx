@@ -28,6 +28,7 @@ const MIN_JUGADORES = 2;
 interface JugadorEstado {
   nombre: string;
   puntuacion: number;
+  esBot: boolean;
 }
 
 interface EstadoDeSala {
@@ -140,6 +141,7 @@ function Navegacion() {
           sessionId,
           nombre: jugador.nombre,
           score: jugador.puntuacion,
+          esBot: jugador.esBot,
           esUsuarioActual,
           esSuTurno: sessionId === state.partida.turnoActual,
         });

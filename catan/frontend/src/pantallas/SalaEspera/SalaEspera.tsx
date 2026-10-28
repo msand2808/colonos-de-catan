@@ -15,6 +15,7 @@ export interface JugadorVista {
   sessionId: string;
   nombre: string;
   score: number;
+  esBot: boolean;
   esUsuarioActual: boolean;
   esSuTurno: boolean;
 }
