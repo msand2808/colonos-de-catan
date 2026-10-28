@@ -226,266 +226,16 @@ export class CatanRoom extends Room {
       this.responderAccion(client, this.accionColocarCamino(client.sessionId, mensaje.h, mensaje.d, mensaje.p));
     },
 
-    msgDescartarRecursos: (
-      client: Client,
-      mensaje: { recurso: string }
-    ) => {
-      //* Verificar si estamos en fase de descarte
-      if (this.partida.faseJuego !== FaseJuego.DESCARTE) {
-        client.send("error", {
-          mensajeError: "No es la fase de descarte"
-        })
-        return;
-      }
-
-      //* Verificar si el jugador esta en la lista de descarte
-      if (!this.partida.jugadoresParaDescartar.has(client.sessionId)) {
-        client.send("error", {
-          mensajeError: "No tienes que descartar"
-        })
-        return;
-      }
-
-      //* Encontrar al jugador que debe descartar
-      const jugadorPorDescartar = client.sessionId;
-
-      //* Intentar descartar
-      const resultado = descartarRecurso(
-        this.jugadores.get(jugadorPorDescartar),
-        this.banca,
-        mensaje.recurso
-      );
-
-
-      //*Error en descarte
-      if (resultado.error) {
-        client.send("error", {
-          mensajeError: resultado.mensaje
-        })
-        return;
-      }
-
-
-      //*Actualizar la cantidad de recursos que le faltan por descartar
-      this.partida.jugadoresParaDescartar.set(
-        jugadorPorDescartar,
-        this.partida.jugadoresParaDescartar.get(jugadorPorDescartar) - 1
-      );
-
-      //* Eliminarlo de la lista si ya no tiene que descartar
-      if (this.partida.jugadoresParaDescartar.get(jugadorPorDescartar) === 0) {
-        this.partida.jugadoresParaDescartar.delete(jugadorPorDescartar);
-        //* Log de terminacion de descarte
-        this.broadcast("log", {
-          jugador: this.jugadores.get(client.sessionId)?.nombre,
-          mensaje: " ha terminado de descartar"
-        })
-      }
-
-      //* Verificar si ya no hay jugadores que deben descartar, para pasar a fase de ladron
-      if (this.partida.jugadoresParaDescartar.size == 0) {
-        this.partida.faseJuego = FaseJuego.LADRON;
-        //* Log de todos descartaron
-        this.broadcast("log", {
-          jugador: "Sistema: ",
-          mensaje: "Todos los jugadores han terminado de descartar"
-        })
-        return;
-      }
+    msgDescartarRecursos: (client: Client, mensaje: { recurso: string }) => {
+      this.responderAccion(client, this.accionDescartarRecursos(client.sessionId, mensaje.recurso));
     },
 
-    msgMoverLadron: (
-      client: Client,
-      mensaje: { h: number, d: number }
-    ) => {
-      //* Verificar que sea el turno del jugador
-      if (this.partida.turnoActual !== client.sessionId) {
-        client.send("error", {
-          mensajeError: "No es tu turno"
-        })
-        return;
-      }
-
-      //*Verificar que estemos en la fase de juego
-      if (this.partida.fase !== FasePartida.JUEGO) {
-        client.send("error", {
-          mensajeError: "No es la fase de juego"
-        })
-        return;
-      }
-
-      //* Verificar que estemos en la fase de mover al ladron
-      if (this.partida.faseJuego !== FaseJuego.LADRON) {
-        client.send("error", {
-          mensajeError: "No es la fase de mover al ladron"
-        })
-        return;
-      }
-
-
-      //* Mover al ladron y obtener los jugadores involucrados
-      const { h, d } = mensaje;
-      const resultado = moverLadron(
-        this.tablero,
-        this.jugadores,
-        client.sessionId,
-        h, d
-      );
-
-      if (resultado.error) {
-        client.send("error", {
-          mensajeError: resultado.mensaje
-        })
-        return;
-      }
-
-      //* Log de movimiento del ladron
-      if(!resultado.error){
-        this.broadcast("log", {
-          jugador: this.jugadores.get(client.sessionId)?.nombre,
-          mensaje: resultado.mensaje
-        })
-      }
-
-      //*Extraemos los jugadores involucrados en el robo
-      const jugadoresinvolucrados = resultado.jugadoresInvolucrados;
-
-      //* Si no hay jugadores pasamos a las acciones
-      if (jugadoresinvolucrados.length === 0) {
-        this.partida.faseJuego = FaseJuego.ACCIONES;
-        return;
-      }
-
-      //*Si solo hubo un jugador, se le roba automaticamente
-      if (jugadoresinvolucrados.length === 1) {
-        robarJugador(
-          this.jugadores.get(client.sessionId),
-          this.jugadores.get(jugadoresinvolucrados[0])
-        )
-        this.partida.faseJuego = FaseJuego.ACCIONES;
-
-        //* Log del robo automatico
-        this.broadcast("log", {
-          jugador: this.jugadores.get(client.sessionId)?.nombre,
-          mensaje: ` ha robado un recurso a ${this.jugadores.get(jugadoresinvolucrados[0])?.nombre}`
-        })
-        return;
-      }
-
-      //* Si hay 2 o mas jugadores involucrados, se pasa la lista de jugadores
-      this.partida.jugadoresParaRobar.clear();
-      this.partida.jugadoresParaRobar.push(...jugadoresinvolucrados);
-
-
-      this.partida.faseJuego = FaseJuego.ROBO
+    msgMoverLadron: (client: Client, mensaje: { h: number, d: number }) => {
+      this.responderAccion(client, this.accionMoverLadron(client.sessionId, mensaje.h, mensaje.d));
     },
 
-    msgCartaCaballero: (
-      client: Client,
-      mensaje: { h: number, d: number }
-    ) => {
-      //* Verificar que la partida siga en curso
-      if (this.partida.fase === FasePartida.FINALIZADA) {
-        client.send("error", {
-          mensajeError: "La partida ha finalizado"
-        })
-        return;
-      }
-
-      //* Verificar que sea el turno del jugador
-      if (this.partida.turnoActual !== client.sessionId) {
-        client.send("error", {
-          mensajeError: "No es tu turno"
-        })
-        return;
-      }
-
-      //* Verificar si estamos en la fase de acciones
-      if (this.partida.faseJuego !== FaseJuego.ACCIONES) {
-        client.send("error", {
-          mensajeError: "Termina de lanzar los dados primero"
-        })
-        return;
-      }
-
-
-      //* Verificar que se permita usar carta
-      if (!this.partida.cartaJugable) {
-        client.send("error", {
-          mensajeError: "Solo una carta por turno"
-        })
-        return;
-      }
-
-
-      //* Verificar que el jugador tenga la carta de caballero
-      const jugador = this.jugadores.get(client.sessionId);
-      if (jugador.cartas_usables.get(`${Desarrollo.CABALLERO}`) < 1) {
-        client.send("error", {
-          mensajeError: "No tienes la carta de caballero"
-        })
-        return;
-      }
-
-      //* Mover al ladron y obtener los jugadores involucrados
-      const { h, d } = mensaje;
-      const resultado = moverLadron(
-        this.tablero,
-        this.jugadores,
-        client.sessionId,
-        h, d);
-
-
-      //* Si no se puede mover el ladron, notificar error
-      if (resultado.error) {
-        client.send("error", {
-          mensajeError: resultado.mensaje
-        })
-        return;
-      }
-
-      //* Log del uso de la carta de caballero
-      this.broadcast("log", {
-        jugador: this.jugadores.get(client.sessionId)?.nombre,
-        mensaje: " ha jugado una carta de caballero"
-      })
-
-      //* Eliminar la carta de caballero del jugador
-      jugarCaballero(this.jugadores, client.sessionId, this.partida, this); 
-
-      //* Verificar si el jugador ha ganado
-      verificarVictoria(this.partida, jugador, client.sessionId, this);
-      
-      //* Deshabilitar el uso de otra carta este turno
-      this.partida.cartaJugable = false;     
-
-      //* Extraemos los jugadores involucrados en el robo
-      const jugadoresInvolucrados = resultado.jugadoresInvolucrados;
-
-      //* Si no hay jugadores, pasamos a las ACCIONES
-      if (jugadoresInvolucrados.length == 0) {
-        this.partida.faseJuego = FaseJuego.ACCIONES;
-        return;
-      }
-
-      //* Si solo hubo un jugador, se le roba automaticamente
-      if (jugadoresInvolucrados.length === 1) {
-        robarJugador(
-          this.jugadores.get(client.sessionId),
-          this.jugadores.get(jugadoresInvolucrados[0])
-        )
-        this.partida.faseJuego = FaseJuego.ACCIONES;
-        return;
-      }
-
-      //* Si hay 2 o mas jugadores involucrados, se pasa la lista de jugadores
-      this.partida.jugadoresParaRobar.clear();
-      this.partida.jugadoresParaRobar.push(...jugadoresInvolucrados);
-
-
-      //? Entramos a fase especial para decidir a quien robar
-
-      this.partida.faseJuego = FaseJuego.ROBO;
+    msgCartaCaballero: (client: Client, mensaje: { h: number, d: number }) => {
+      this.responderAccion(client, this.accionCartaCaballero(client.sessionId, mensaje.h, mensaje.d));
     },
 
     msgIntercambiarJugador: (
@@ -874,57 +624,9 @@ export class CatanRoom extends Room {
       this.partida.cartaJugable = false;
     },
 
-    msgRobarJugador: (
-      client: Client,
-      mensaje: { jugadorRobado: string}
-    ) => {
-      //* Verificar que la partida siga en curso
-      if (this.partida.fase === FasePartida.FINALIZADA) {
-        client.send("error", {
-          mensajeError: "La partida ha finalizado"
-        })
-        return;
-      }
-
-      //* Verificar que sea el turno del jugador
-      if (this.partida.turnoActual !== client.sessionId) {
-        client.send("error", {
-          mensajeError: "No es tu turno"
-        })
-        return;
-      }
-
-      //* Verificar que estemos en la fase de robar
-      if (this.partida.faseJuego !== FaseJuego.ROBO) {
-        client.send("error", {
-          mensajeError: "No es la fase de robar"
-        })
-        return;
-      }
-
-
-      //* Verificar que el jugador elegido este en la lista de robo
-      if(!this.partida.jugadoresParaRobar.includes(mensaje.jugadorRobado)){
-        client.send("error", {
-          mensajeError: "El jugador elegido no esta en la lista de robo"
-        })
-        return;
-      }
-
-      //* Robar un recurso al azar al jugador elegido
-
-      robarJugador(this.jugadores.get(client.sessionId), this.jugadores.get(mensaje.jugadorRobado));
-
-      //* Log del robo
-      this.broadcast("log", {
-        jugador: this.jugadores.get(client.sessionId)?.nombre,
-        mensaje: ` ha robado un recurso a ${this.jugadores.get(mensaje.jugadorRobado)?.nombre}`
-      })
-
-      //* Limpiar Lista y volver a acciones
-      this.partida.jugadoresParaRobar.clear();
-      this.partida.faseJuego = FaseJuego.ACCIONES;
-    }
+    msgRobarJugador: (client: Client, mensaje: { jugadorRobado: string }) => {
+      this.responderAccion(client, this.accionRobarJugador(client.sessionId, mensaje.jugadorRobado));
+    },
     
   };
 
@@ -1360,6 +1062,263 @@ export class CatanRoom extends Room {
     if (this.partida.carreterasGratis === 0) {
       this.partida.faseJuego = FaseJuego.ACCIONES
     }
+
+    return exito();
+  }
+
+  accionDescartarRecursos(sessionId: string, recurso: string): ResultadoAccion {
+    //* Verificar si estamos en fase de descarte
+    if (this.partida.faseJuego !== FaseJuego.DESCARTE) {
+      return fallo("No es la fase de descarte");
+    }
+
+    //* Verificar si el jugador esta en la lista de descarte
+    if (!this.partida.jugadoresParaDescartar.has(sessionId)) {
+      return fallo("No tienes que descartar");
+    }
+
+    //* Encontrar al jugador que debe descartar
+    const jugadorPorDescartar = sessionId;
+
+    //* Intentar descartar
+    const resultado = descartarRecurso(
+      this.jugadores.get(jugadorPorDescartar),
+      this.banca,
+      recurso
+    );
+
+
+    //*Error en descarte
+    if (resultado.error) {
+      return fallo(resultado.mensaje);
+    }
+
+
+    //*Actualizar la cantidad de recursos que le faltan por descartar
+    this.partida.jugadoresParaDescartar.set(
+      jugadorPorDescartar,
+      this.partida.jugadoresParaDescartar.get(jugadorPorDescartar) - 1
+    );
+
+    //* Eliminarlo de la lista si ya no tiene que descartar
+    if (this.partida.jugadoresParaDescartar.get(jugadorPorDescartar) === 0) {
+      this.partida.jugadoresParaDescartar.delete(jugadorPorDescartar);
+      //* Log de terminacion de descarte
+      this.broadcast("log", {
+        jugador: this.jugadores.get(sessionId)?.nombre,
+        mensaje: " ha terminado de descartar"
+      })
+    }
+
+    //* Verificar si ya no hay jugadores que deben descartar, para pasar a fase de ladron
+    if (this.partida.jugadoresParaDescartar.size == 0) {
+      this.partida.faseJuego = FaseJuego.LADRON;
+      //* Log de todos descartaron
+      this.broadcast("log", {
+        jugador: "Sistema: ",
+        mensaje: "Todos los jugadores han terminado de descartar"
+      })
+      return exito();
+    }
+
+    return exito();
+  }
+
+  accionMoverLadron(sessionId: string, h: number, d: number): ResultadoAccion {
+    //* Verificar que sea el turno del jugador
+    if (this.partida.turnoActual !== sessionId) {
+      return fallo("No es tu turno");
+    }
+
+    //*Verificar que estemos en la fase de juego
+    if (this.partida.fase !== FasePartida.JUEGO) {
+      return fallo("No es la fase de juego");
+    }
+
+    //* Verificar que estemos en la fase de mover al ladron
+    if (this.partida.faseJuego !== FaseJuego.LADRON) {
+      return fallo("No es la fase de mover al ladron");
+    }
+
+
+    //* Mover al ladron y obtener los jugadores involucrados
+    const resultado = moverLadron(
+      this.tablero,
+      this.jugadores,
+      sessionId,
+      h, d
+    );
+
+    if (resultado.error) {
+      return fallo(resultado.mensaje);
+    }
+
+    //* Log de movimiento del ladron
+    if(!resultado.error){
+      this.broadcast("log", {
+        jugador: this.jugadores.get(sessionId)?.nombre,
+        mensaje: resultado.mensaje
+      })
+    }
+
+    //*Extraemos los jugadores involucrados en el robo
+    const jugadoresinvolucrados = resultado.jugadoresInvolucrados;
+
+    //* Si no hay jugadores pasamos a las acciones
+    if (jugadoresinvolucrados.length === 0) {
+      this.partida.faseJuego = FaseJuego.ACCIONES;
+      return exito();
+    }
+
+    //*Si solo hubo un jugador, se le roba automaticamente
+    if (jugadoresinvolucrados.length === 1) {
+      robarJugador(
+        this.jugadores.get(sessionId),
+        this.jugadores.get(jugadoresinvolucrados[0])
+      )
+      this.partida.faseJuego = FaseJuego.ACCIONES;
+
+      //* Log del robo automatico
+      this.broadcast("log", {
+        jugador: this.jugadores.get(sessionId)?.nombre,
+        mensaje: ` ha robado un recurso a ${this.jugadores.get(jugadoresinvolucrados[0])?.nombre}`
+      })
+      return exito();
+    }
+
+    //* Si hay 2 o mas jugadores involucrados, se pasa la lista de jugadores
+    this.partida.jugadoresParaRobar.clear();
+    this.partida.jugadoresParaRobar.push(...jugadoresinvolucrados);
+
+
+    this.partida.faseJuego = FaseJuego.ROBO
+
+    return exito();
+  }
+
+  accionCartaCaballero(sessionId: string, h: number, d: number): ResultadoAccion {
+    //* Verificar que la partida siga en curso
+    if (this.partida.fase === FasePartida.FINALIZADA) {
+      return fallo("La partida ha finalizado");
+    }
+
+    //* Verificar que sea el turno del jugador
+    if (this.partida.turnoActual !== sessionId) {
+      return fallo("No es tu turno");
+    }
+
+    //* Verificar si estamos en la fase de acciones
+    if (this.partida.faseJuego !== FaseJuego.ACCIONES) {
+      return fallo("Termina de lanzar los dados primero");
+    }
+
+
+    //* Verificar que se permita usar carta
+    if (!this.partida.cartaJugable) {
+      return fallo("Solo una carta por turno");
+    }
+
+
+    //* Verificar que el jugador tenga la carta de caballero
+    const jugador = this.jugadores.get(sessionId);
+    if (jugador.cartas_usables.get(`${Desarrollo.CABALLERO}`) < 1) {
+      return fallo("No tienes la carta de caballero");
+    }
+
+    //* Mover al ladron y obtener los jugadores involucrados
+    const resultado = moverLadron(
+      this.tablero,
+      this.jugadores,
+      sessionId,
+      h, d);
+
+
+    //* Si no se puede mover el ladron, notificar error
+    if (resultado.error) {
+      return fallo(resultado.mensaje);
+    }
+
+    //* Log del uso de la carta de caballero
+    this.broadcast("log", {
+      jugador: this.jugadores.get(sessionId)?.nombre,
+      mensaje: " ha jugado una carta de caballero"
+    })
+
+    //* Eliminar la carta de caballero del jugador
+    jugarCaballero(this.jugadores, sessionId, this.partida, this); 
+
+    //* Verificar si el jugador ha ganado
+    verificarVictoria(this.partida, jugador, sessionId, this);
+    
+    //* Deshabilitar el uso de otra carta este turno
+    this.partida.cartaJugable = false;     
+
+    //* Extraemos los jugadores involucrados en el robo
+    const jugadoresInvolucrados = resultado.jugadoresInvolucrados;
+
+    //* Si no hay jugadores, pasamos a las ACCIONES
+    if (jugadoresInvolucrados.length == 0) {
+      this.partida.faseJuego = FaseJuego.ACCIONES;
+      return exito();
+    }
+
+    //* Si solo hubo un jugador, se le roba automaticamente
+    if (jugadoresInvolucrados.length === 1) {
+      robarJugador(
+        this.jugadores.get(sessionId),
+        this.jugadores.get(jugadoresInvolucrados[0])
+      )
+      this.partida.faseJuego = FaseJuego.ACCIONES;
+      return exito();
+    }
+
+    //* Si hay 2 o mas jugadores involucrados, se pasa la lista de jugadores
+    this.partida.jugadoresParaRobar.clear();
+    this.partida.jugadoresParaRobar.push(...jugadoresInvolucrados);
+
+
+    //? Entramos a fase especial para decidir a quien robar
+
+    this.partida.faseJuego = FaseJuego.ROBO;
+
+    return exito();
+  }
+
+  accionRobarJugador(sessionId: string, jugadorRobado: string): ResultadoAccion {
+    //* Verificar que la partida siga en curso
+    if (this.partida.fase === FasePartida.FINALIZADA) {
+      return fallo("La partida ha finalizado");
+    }
+
+    //* Verificar que sea el turno del jugador
+    if (this.partida.turnoActual !== sessionId) {
+      return fallo("No es tu turno");
+    }
+
+    //* Verificar que estemos en la fase de robar
+    if (this.partida.faseJuego !== FaseJuego.ROBO) {
+      return fallo("No es la fase de robar");
+    }
+
+
+    //* Verificar que el jugador elegido este en la lista de robo
+    if(!this.partida.jugadoresParaRobar.includes(jugadorRobado)){
+      return fallo("El jugador elegido no esta en la lista de robo");
+    }
+
+    //* Robar un recurso al azar al jugador elegido
+
+    robarJugador(this.jugadores.get(sessionId), this.jugadores.get(jugadorRobado));
+
+    //* Log del robo
+    this.broadcast("log", {
+      jugador: this.jugadores.get(sessionId)?.nombre,
+      mensaje: ` ha robado un recurso a ${this.jugadores.get(jugadorRobado)?.nombre}`
+    })
+
+    //* Limpiar Lista y volver a acciones
+    this.partida.jugadoresParaRobar.clear();
+    this.partida.faseJuego = FaseJuego.ACCIONES;
 
     return exito();
   }
