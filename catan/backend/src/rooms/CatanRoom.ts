@@ -65,49 +65,8 @@ export class CatanRoom extends Room {
       
     },
 
-    msgIntercambiarBanca: (
-      client: Client,
-      mensaje: { recursoEntregado: string, recursoRecibido: string }
-    ) => {
-      //* Verificar que sea el turno del jugador
-      if (this.partida.turnoActual !== client.sessionId) {
-        client.send("error", {
-          mensajeError: "No es tu turno"
-        })
-        return;
-      }
-
-      //* Verificar que estemos en la fase de acciones
-      if (this.partida.faseJuego !== FaseJuego.ACCIONES) {
-        client.send("error", {
-          mensajeError: "Termian de lanzar los dados primero"
-        })
-        return;
-      }
-
-      //* Intentar realizar el intercambio con la banca
-      const resultado = comerciarBanca(
-        this.jugadores.get(client.sessionId), this.banca, client.sessionId,
-        this.tablero.vertices, this.tablero.puertos,
-        mensaje.recursoEntregado, mensaje.recursoRecibido
-      );
-
-      //* Si el intercambio fallo, notificar error
-      if (resultado.error) {
-        client.send("error", {
-          mensajeError: resultado.mensaje
-        })
-        return;
-      }
-
-      //* Log del intecambio con la banca
-      if(!resultado.error){
-        this.broadcast("log", {
-          jugador: this.jugadores.get(client.sessionId)?.nombre,
-          mensaje: resultado.mensaje
-        })
-      }
-
+    msgIntercambiarBanca: (client: Client, mensaje: { recursoEntregado: string, recursoRecibido: string }) => {
+      this.responderAccion(client, this.accionIntercambiarBanca(client.sessionId, mensaje.recursoEntregado, mensaje.recursoRecibido));
     },
 
     msgLanzarDados: (client: Client) => {
@@ -238,174 +197,17 @@ export class CatanRoom extends Room {
       this.responderAccion(client, this.accionCartaCaballero(client.sessionId, mensaje.h, mensaje.d));
     },
 
-    msgIntercambiarJugador: (
-      client: Client,
-      mensaje: {
+    msgIntercambiarJugador: (client: Client, mensaje: {
         recursoEntregado: string,
         cantidadEntregada: number,
         recursoRecibido: string,
         cantidadRecibida: number,
-      }
-    ) => {
-      //* Verificar que sea el turno del jugador
-      if (this.partida.turnoActual !== client.sessionId) {
-        client.send("error", {
-          mensajeError: "No es tu turno"
-        })
-        return;
-      }
-
-      // * Verificar que estemos en la fase de acciones
-      if (this.partida.faseJuego !== FaseJuego.ACCIONES) {
-        client.send("error", {
-          mensajeError: "Termina de lanzar los dados primero"
-        })
-        return;
-      }
-
-      // * Verificar que no exista una oferta activa
-      if (this.partida.ofertaIntercambio.jugador !== "") {
-        client.send("error", {
-          mensajeError: "Ya existe una oferta activa"
-        })
-        return; 
-      }
-
-      const jugador = this.jugadores.get(client.sessionId);
-
-      // * Verificar que los recursos sean validos
-      if (
-        !jugador.recursos.has(mensaje.recursoEntregado) ||
-        !jugador.recursos.has(mensaje.recursoRecibido)
-      ) {
-        client.send("error", {
-          mensajeError: "Los Recursos seleccionados no son validos"
-        })
-        return;
-      }
-
-      // * Verificar que las cantidades tengan sentido
-      if (mensaje.cantidadEntregada <= 0 || mensaje.cantidadRecibida <= 0) {
-        client.send("error", {
-          mensajeError: "No tienes suficientes recuros, mi loco"
-        })
-        return;
-      }
-
-      // * No se permite pedir y dar lo mismo
-      if (mensaje.recursoEntregado === mensaje.recursoRecibido) {
-        client.send("error", {
-          mensajeError: "No puedes pedir y dar el mismo recurso"
-        })
-        return;
-      }
-
-      // * Llenado de la oferta
-      this.partida.ofertaIntercambio.setOferta(
-        client.sessionId, this.jugadores,
-        mensaje.recursoEntregado, mensaje.cantidadEntregada,
-        mensaje.recursoRecibido, mensaje.cantidadRecibida
-      );
-
-      //* Log de la oferta de intercambio
-      this.broadcast("log", {
-        jugador: this.jugadores.get(client.sessionId)?.nombre,
-        mensaje: " ha hecho una oferta de intercambio"
-      })
-
+      }) => {
+      this.responderAccion(client, this.accionIntercambiarJugador(client.sessionId, mensaje.recursoEntregado, mensaje.cantidadEntregada, mensaje.recursoRecibido, mensaje.cantidadRecibida));
     },
 
-    msgResponderIntercambio: (
-      client: Client,
-      mensaje: { respuesta: number }
-    ) => {
-      // * Verificar que exista una oferta activa
-      if (this.partida.ofertaIntercambio.jugador === "") {
-        client.send("error", {
-          mensajeError: "No hay una oferta activa"
-        })
-        return;
-      }
-
-      // * Verificar que no sea el jugador que la propuso
-      if (!this.partida.ofertaIntercambio.respuestas.has(client.sessionId)) {
-        client.send("error", {
-          mensajeError: "No puedes responde a esta oferta"
-        })
-        return;
-      }
-
-      // * Verificar que el jugador aún deba reponder
-      if (this.partida.ofertaIntercambio.respuestas.get(client.sessionId) !== 0) {
-        client.send("error", {
-          mensajeError: "Ya respondiste a esta oferta"
-        })
-        return;
-      }
-
-      // * Verificar que sea una respueta valida
-      if (mensaje.respuesta !== 1 && mensaje.respuesta !== -1) {
-        client.send("error", {
-          mensajeError: "Respuesta invalida"
-        })
-        return;
-      }
-
-      // ! Rechazo
-      if (mensaje.respuesta === -1) {
-        this.rechazarOferta(client.sessionId);
-        return;
-      }
-
-      const jugador = this.jugadores.get(client.sessionId);
-      const jugadorOferta = this.jugadores.get(this.partida.ofertaIntercambio.jugador);
-
-      // ? Acepto
-      if (mensaje.respuesta === 1) {
-        // * Destruir la ofera si el jugador que propuso ya gastó
-        if (jugadorOferta.recursos.get(
-          this.partida.ofertaIntercambio.recursoOfrecido
-        ) < this.partida.ofertaIntercambio.cantidadOfrecida) {
-          this.partida.ofertaIntercambio.limpiarOferta();
-
-          client.send("error", {
-            mensajeError: "Oferta cancelada, el negociante no tiene ya recursos"
-          })
-
-          return;
-        }
-
-        // * Verificar que el jugadr que acepta tenga suficientes recursos
-        if (jugador.recursos.get(
-          this.partida.ofertaIntercambio.recursoSolicitado
-        ) < this.partida.ofertaIntercambio.cantidadSolicitada) {
-          // * Avisar al jugador por que no se pudo aceptar
-          client.send("error", {
-            mensajeError: "No tienes suficientes recursos para aceptar esta oferta"
-          })
-
-          // * Automaticamente pasarlo a rechazo
-          this.rechazarOferta(client.sessionId);
-          return;
-        }
-
-        // * Intercambiar los recursos
-        intercambiarRecursos(
-          this.partida.ofertaIntercambio.jugador,
-          client.sessionId,
-          this.jugadores,
-          this.partida.ofertaIntercambio
-        );
-
-        //* Log del intercambio de recursos
-        this.broadcast("log", {
-          jugador: this.jugadores.get(client.sessionId)?.nombre,
-          mensaje: " ha aceptado la oferta de intercambio"
-        })
-
-        // * Destruir la oferta
-        this.partida.ofertaIntercambio.limpiarOferta();
-      }
+    msgResponderIntercambio: (client: Client, mensaje: { respuesta: number }) => {
+      this.responderAccion(client, this.accionResponderIntercambio(client.sessionId, mensaje.respuesta));
     },
 
     msgComprarCarta: (client: Client) => {
@@ -1279,6 +1081,165 @@ export class CatanRoom extends Room {
 
     //* Marcar que ya se utilizo una carta en este turno
     this.partida.cartaJugable = false;
+
+    return exito();
+  }
+
+  accionIntercambiarBanca(sessionId: string, recursoEntregado: string, recursoRecibido: string): ResultadoAccion {
+    //* Verificar que sea el turno del jugador
+    if (this.partida.turnoActual !== sessionId) {
+      return fallo("No es tu turno");
+    }
+
+    //* Verificar que estemos en la fase de acciones
+    if (this.partida.faseJuego !== FaseJuego.ACCIONES) {
+      return fallo("Termian de lanzar los dados primero");
+    }
+
+    //* Intentar realizar el intercambio con la banca
+    const resultado = comerciarBanca(
+      this.jugadores.get(sessionId), this.banca, sessionId,
+      this.tablero.vertices, this.tablero.puertos,
+      recursoEntregado, recursoRecibido
+    );
+
+    //* Si el intercambio fallo, notificar error
+    if (resultado.error) {
+      return fallo(resultado.mensaje);
+    }
+
+    //* Log del intecambio con la banca
+    if(!resultado.error){
+      this.broadcast("log", {
+        jugador: this.jugadores.get(sessionId)?.nombre,
+        mensaje: resultado.mensaje
+      })
+    }
+
+    return exito();
+  }
+
+  accionIntercambiarJugador(sessionId: string, recursoEntregado: string, cantidadEntregada: number, recursoRecibido: string, cantidadRecibida: number): ResultadoAccion {
+    //* Verificar que sea el turno del jugador
+    if (this.partida.turnoActual !== sessionId) {
+      return fallo("No es tu turno");
+    }
+
+    // * Verificar que estemos en la fase de acciones
+    if (this.partida.faseJuego !== FaseJuego.ACCIONES) {
+      return fallo("Termina de lanzar los dados primero");
+    }
+
+    // * Verificar que no exista una oferta activa
+    if (this.partida.ofertaIntercambio.jugador !== "") {
+      return fallo("Ya existe una oferta activa"); 
+    }
+
+    const jugador = this.jugadores.get(sessionId);
+
+    // * Verificar que los recursos sean validos
+    if (
+      !jugador.recursos.has(recursoEntregado) ||
+      !jugador.recursos.has(recursoRecibido)
+    ) {
+      return fallo("Los Recursos seleccionados no son validos");
+    }
+
+    // * Verificar que las cantidades tengan sentido
+    if (cantidadEntregada <= 0 || cantidadRecibida <= 0) {
+      return fallo("No tienes suficientes recuros, mi loco");
+    }
+
+    // * No se permite pedir y dar lo mismo
+    if (recursoEntregado === recursoRecibido) {
+      return fallo("No puedes pedir y dar el mismo recurso");
+    }
+
+    // * Llenado de la oferta
+    this.partida.ofertaIntercambio.setOferta(
+      sessionId, this.jugadores,
+      recursoEntregado, cantidadEntregada,
+      recursoRecibido, cantidadRecibida
+    );
+
+    //* Log de la oferta de intercambio
+    this.broadcast("log", {
+      jugador: this.jugadores.get(sessionId)?.nombre,
+      mensaje: " ha hecho una oferta de intercambio"
+    })
+
+    return exito();
+  }
+
+  accionResponderIntercambio(sessionId: string, respuesta: number): ResultadoAccion {
+    // * Verificar que exista una oferta activa
+    if (this.partida.ofertaIntercambio.jugador === "") {
+      return fallo("No hay una oferta activa");
+    }
+
+    // * Verificar que no sea el jugador que la propuso
+    if (!this.partida.ofertaIntercambio.respuestas.has(sessionId)) {
+      return fallo("No puedes responde a esta oferta");
+    }
+
+    // * Verificar que el jugador aún deba reponder
+    if (this.partida.ofertaIntercambio.respuestas.get(sessionId) !== 0) {
+      return fallo("Ya respondiste a esta oferta");
+    }
+
+    // * Verificar que sea una respueta valida
+    if (respuesta !== 1 && respuesta !== -1) {
+      return fallo("Respuesta invalida");
+    }
+
+    // ! Rechazo
+    if (respuesta === -1) {
+      this.rechazarOferta(sessionId);
+      return exito();
+    }
+
+    const jugador = this.jugadores.get(sessionId);
+    const jugadorOferta = this.jugadores.get(this.partida.ofertaIntercambio.jugador);
+
+    // ? Acepto
+    if (respuesta === 1) {
+      // * Destruir la ofera si el jugador que propuso ya gastó
+      if (jugadorOferta.recursos.get(
+        this.partida.ofertaIntercambio.recursoOfrecido
+      ) < this.partida.ofertaIntercambio.cantidadOfrecida) {
+        this.partida.ofertaIntercambio.limpiarOferta();
+
+        return fallo("Oferta cancelada, el negociante no tiene ya recursos");
+      }
+
+      // * Verificar que el jugadr que acepta tenga suficientes recursos
+      if (jugador.recursos.get(
+        this.partida.ofertaIntercambio.recursoSolicitado
+      ) < this.partida.ofertaIntercambio.cantidadSolicitada) {
+        // * Automaticamente pasarlo a rechazo
+        this.rechazarOferta(sessionId);
+
+        // * Avisar al jugador por que no se pudo aceptar
+        return fallo("No tienes suficientes recursos para aceptar esta oferta");
+      }
+
+      // * Intercambiar los recursos
+      intercambiarRecursos(
+        this.partida.ofertaIntercambio.jugador,
+        sessionId,
+        this.jugadores,
+        this.partida.ofertaIntercambio
+      );
+
+      //* Log del intercambio de recursos
+      this.broadcast("log", {
+        jugador: this.jugadores.get(sessionId)?.nombre,
+        mensaje: " ha aceptado la oferta de intercambio"
+      })
+
+      // * Destruir la oferta
+      this.partida.ofertaIntercambio.limpiarOferta();
+    }
 
     return exito();
   }
