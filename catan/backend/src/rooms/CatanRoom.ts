@@ -25,6 +25,7 @@ import { siguienteTurnoPreconstruccion } from "../functions/siguienteTurnoPrecon
 import { comprarCarta } from "../functions/comprarCarta.js";
 import { sacarJugador } from "../functions/sacarJugador.js";
 import { type ResultadoAccion, exito, fallo } from "../common/ResultadoAccion.js";
+import { aristasDelVertice, ordenarVerticesPorPuntos } from "../functions/elegirVerticesBot.js";
 
 
 export class CatanRoom extends Room {
@@ -36,6 +37,8 @@ export class CatanRoom extends Room {
   jugadores = this.state.jugadores;
   ofertas = new Map<string, unknown>();
   codigoAcceso = "";
+  //* Milisegundos que espera un bot antes de cada jugada para que se vea
+  pausaBot = 1000;
 
 
   messages = {
@@ -125,6 +128,9 @@ export class CatanRoom extends Room {
 
       //* Cerar la sala para que nadie pueda entrar
       this.lock();
+
+      //* Si el primer turno es de un bot, que empiece a jugar
+      this.programarTurnoBot();
     },
 
     msgAgregarBot: (client: Client) => {
@@ -553,6 +559,7 @@ export class CatanRoom extends Room {
       //? Ahora le toca al siguiente jugador poner un asentamiento
       this.partida.fasePreconstruccion = FasePreconstruccion.ASENTAMIENTO;
       siguienteTurnoPreconstruccion(this.partida);
+      this.programarTurnoBot();
       return exito();
     }
 
@@ -1264,6 +1271,50 @@ export class CatanRoom extends Room {
     }
   }
 
+  //* Si en preconstruccion le toca a un bot, agenda su jugada tras la pausa
+  programarTurnoBot() {
+    if (this.partida.fase !== FasePartida.PRECONSTRUCCION) return;
+    if (!this.jugadores.get(this.partida.turnoActual)?.esBot) return;
+
+    this.clock.setTimeout(() => this.jugarTurnoBotPreconstruccion(), this.pausaBot);
+  }
+
+  //* Un paso del bot: poblado en el mejor vertice valido o camino pegado a el.
+  //* Usa las mismas acciones que un humano, asi que valida igual
+  jugarTurnoBotPreconstruccion() {
+    const id = this.partida.turnoActual;
+    const bot = this.jugadores.get(id);
+    if (this.partida.fase !== FasePartida.PRECONSTRUCCION || !bot?.esBot) return;
+
+    let jugado = false;
+    if (this.partida.fasePreconstruccion === FasePreconstruccion.ASENTAMIENTO) {
+      for (const v of ordenarVerticesPorPuntos(this.tablero.vertices, this.tablero.hexagonos)) {
+        if (!this.accionColocarAsentamiento(id, v.h, v.d, v.p).error) {
+          jugado = true;
+          break;
+        }
+      }
+    } else {
+      const [h, d, p] = bot.ultimoAsentamiento.split(",").map(Number);
+      for (const clave of aristasDelVertice(h, d, p)) {
+        const [ah, ad, ap] = clave.split(",").map(Number);
+        if (!this.accionColocarCamino(id, ah, ad, ap).error) {
+          jugado = true;
+          break;
+        }
+      }
+    }
+
+    if (!jugado) {
+      console.error(`${bot.nombre} no encontro una jugada valida en preconstruccion`);
+      return;
+    }
+
+    //* Tras el poblado sigue el camino; tras el camino, el siguiente turno
+    //* (accionColocarCamino ya lo programa al avanzar el turno)
+    if (this.partida.turnoActual === id) this.programarTurnoBot();
+  }
+
   //* Solo el anfitrion maneja los bots, y solo mientras se esta en el lobby
   validarManejoDeBots(client: Client): string | null {
     if (this.partida.creador !== client.sessionId) {
@@ -1312,6 +1363,7 @@ export class CatanRoom extends Room {
     console.log("room created!", this.roomId);
     //* si se ingresa codigo de acceso, se setea al atributo de codigo de acceso a la sala
     this.codigoAcceso = options.codigoAcceso || ""
+    this.pausaBot = options.pausaBot ?? this.pausaBot
 
     //* seteamos la data de la sala
     this.setMetadata({
