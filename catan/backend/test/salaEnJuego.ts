@@ -40,3 +40,9 @@ export function escucharLogs(cliente: any): Log[] {
 export function esperar(ms: number) {
     return new Promise((resolve) => setTimeout(resolve, ms));
 }
+
+//* Espera a que se cumpla una condicion (los bots juegan con un timer)
+export async function esperarHasta(condicion: () => boolean, ms = 2000) {
+    const limite = Date.now() + ms;
+    while (!condicion() && Date.now() < limite) await esperar(10);
+}
