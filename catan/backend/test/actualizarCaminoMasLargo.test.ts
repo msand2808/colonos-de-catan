@@ -20,7 +20,7 @@ function anillo(h: number, d: number) {
 }
 
 //* Cada jugador construye alrededor de un hexagono distinto, sin tocarse
-const HEXAGONO = { [ANA]: [0, 0], [BETO]: [2, -2], [CARLA]: [-2, 2] };
+const HEXAGONO: Record<string, number[]> = { [ANA]: [0, 0], [BETO]: [2, -2], [CARLA]: [-2, 2] };
 
 //* Esquina del hexagono 0,0 que queda en medio de los caminos de Ana
 const MEDIO_ANA = "-1,1,0";
@@ -134,7 +134,9 @@ describe("actualizarCaminoMasLargo", () => {
     describe("cuando le cortan el camino al duenio", () => {
 
         it("pasa a quien quede solo en primer lugar", () => {
+            //* Ana llega primero a 5 y es la duenia; Beto la empata despues
             construirCaminos(ANA, 5);
+            actualizar();
             construirCaminos(BETO, 5);
             actualizar();
 
@@ -147,7 +149,9 @@ describe("actualizarCaminoMasLargo", () => {
         });
 
         it("si los demas empatan, nadie la tiene", () => {
+            //* Ana llega primero a 5 y es la duenia; Beto y Carla la empatan despues
             construirCaminos(ANA, 5);
+            actualizar();
             construirCaminos(BETO, 5);
             construirCaminos(CARLA, 5);
             actualizar();
