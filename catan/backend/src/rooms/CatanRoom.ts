@@ -1,7 +1,7 @@
 import { Room, Client, CloseCode, Delayed } from "colyseus";
 import { CatanState } from "../states/CatanState.js";
 import { Jugador } from "../schemas/Jugador.js";
-import { Desarrollo, FaseJuego, FasePartida, FasePreconstruccion } from "../common/enums.js";
+import { Construccion, Desarrollo, FaseJuego, FasePartida, FasePreconstruccion } from "../common/enums.js";
 import { buscarHexagonos } from "../functions/buscarHexagonos.js";
 import { repartirRecursos } from "../functions/repartirRecursos.js";
 import { lanzarDados } from "../functions/lanzarDados.js";
@@ -25,7 +25,7 @@ import { siguienteTurnoPreconstruccion } from "../functions/siguienteTurnoPrecon
 import { comprarCarta } from "../functions/comprarCarta.js";
 import { sacarJugador } from "../functions/sacarJugador.js";
 import { type ResultadoAccion, exito, fallo } from "../common/ResultadoAccion.js";
-import { aristasDelVertice, ordenarVerticesPorPuntos } from "../functions/elegirVerticesBot.js";
+import { aristasDelVertice, ordenarAristasPorPuntos, ordenarVerticesPorPuntos } from "../functions/elegirVerticesBot.js";
 
 
 export class CatanRoom extends Room {
@@ -39,6 +39,8 @@ export class CatanRoom extends Room {
   codigoAcceso = "";
   //* Milisegundos que espera un bot antes de cada jugada para que se vea
   pausaBot = 1000;
+  //* Jugada del bot que esta esperando su pausa
+  timerBot?: Delayed;
 
 
   messages = {
@@ -366,6 +368,7 @@ export class CatanRoom extends Room {
     this.partida.ofertaIntercambio.limpiarOferta()
 
     siguienteTurno(this.partida);
+    this.programarTurnoBot();
 
     return exito();
   }
@@ -1271,12 +1274,59 @@ export class CatanRoom extends Room {
     }
   }
 
-  //* Si en preconstruccion le toca a un bot, agenda su jugada tras la pausa
+  //* Si le toca a un bot, agenda su siguiente jugada tras la pausa. Solo hay una
+  //* jugada agendada a la vez, asi que llamarlo de mas no hace que juegue doble
   programarTurnoBot() {
-    if (this.partida.fase !== FasePartida.PRECONSTRUCCION) return;
+    this.timerBot?.clear();
     if (!this.jugadores.get(this.partida.turnoActual)?.esBot) return;
 
-    this.clock.setTimeout(() => this.jugarTurnoBotPreconstruccion(), this.pausaBot);
+    if (this.partida.fase === FasePartida.PRECONSTRUCCION) {
+      this.timerBot = this.clock.setTimeout(() => this.jugarTurnoBotPreconstruccion(), this.pausaBot);
+    } else if (this.partida.fase === FasePartida.JUEGO) {
+      this.timerBot = this.clock.setTimeout(() => this.jugarTurnoBot(), this.pausaBot);
+    }
+  }
+
+  //* Un paso del bot en su turno: lanzar los dados, construir una cosa o pasar
+  //* el turno si ya no puede construir nada
+  jugarTurnoBot() {
+    const id = this.partida.turnoActual;
+    if (this.partida.fase !== FasePartida.JUEGO || !this.jugadores.get(id)?.esBot) return;
+
+    if (this.partida.faseJuego === FaseJuego.DADOS) {
+      this.accionLanzarDados(id);
+    } else if (this.partida.faseJuego === FaseJuego.ACCIONES) {
+      //* accionPasarTurno ya programa al siguiente si tambien es bot
+      if (!this.construirBot(id)) {
+        this.accionPasarTurno(id);
+        return;
+      }
+    } else {
+      //* Con un 7 (descarte, ladron, robo) el bot todavia no sabe que hacer
+      return;
+    }
+
+    this.programarTurnoBot();
+  }
+
+  //* Construye lo primero que pueda con esta prioridad: ciudad, poblado, camino,
+  //* carta de desarrollo. Usa las mismas acciones que un humano, asi que solo
+  //* construye en lugares validos. Devuelve si construyo algo
+  construirBot(id: string): boolean {
+    const { vertices, aristas, hexagonos } = this.tablero;
+    const verticesOrdenados = ordenarVerticesPorPuntos(vertices, hexagonos);
+
+    for (const v of verticesOrdenados) {
+      if (v.propietario !== id || v.constuccion !== Construccion.ASENTAMIENTO) continue;
+      if (!this.accionColocarCiudad(id, v.h, v.d, v.p).error) return true;
+    }
+    for (const v of verticesOrdenados) {
+      if (!this.accionColocarAsentamiento(id, v.h, v.d, v.p).error) return true;
+    }
+    for (const a of ordenarAristasPorPuntos(aristas, vertices, hexagonos)) {
+      if (!this.accionColocarCamino(id, a.h, a.d, a.p).error) return true;
+    }
+    return !this.accionComprarCarta(id).error;
   }
 
   //* Un paso del bot: poblado en el mejor vertice valido o camino pegado a el.
@@ -1422,6 +1472,9 @@ export class CatanRoom extends Room {
       })
 
       sacarJugador(this.partida, this.tablero, this.banca, this.jugadores, client.sessionId);
+
+      //* Si el turno paso a un bot, que juegue
+      this.programarTurnoBot();
 
       //* Actualizar el creador si era el que abandono
       if(eraCreador){
