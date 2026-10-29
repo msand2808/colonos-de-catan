@@ -1,6 +1,7 @@
 import { MapSchema } from "@colyseus/schema";
 import { Vertice } from "../schemas/Vertices.js";
 import { Arista } from "../schemas/Arista.js";
+import { extremosArista } from "../common/tablero.js";
 
 export function calcularCaminoMasLargo(
     vertices: MapSchema<Vertice>,
@@ -15,7 +16,7 @@ export function calcularCaminoMasLargo(
         if(arista.propietario !== sessionId) return;
         caminos.push(clave);
 
-        extremosArista(arista).forEach((vertice) => {
+        extremosArista(arista.h, arista.d, arista.p).forEach((vertice) => {
             const lista = caminosPorVertice.get(vertice) ?? [];
             lista.push(clave);
             caminosPorVertice.set(vertice, lista);
@@ -45,7 +46,8 @@ export function calcularCaminoMasLargo(
     //* Probar cada camino como inicio, en ambas direcciones
     let masLargo = 0;
     caminos.forEach((clave) => {
-        const [v1, v2] = extremosArista(aristas.get(clave));
+        const { h, d, p } = aristas.get(clave);
+        const [v1, v2] = extremosArista(h, d, p);
         const usados = new Set([clave]);
         masLargo = Math.max(masLargo, 1 + seguir(v1, usados), 1 + seguir(v2, usados));
     });
@@ -53,17 +55,7 @@ export function calcularCaminoMasLargo(
     return masLargo;
 }
 
-//* Las dos esquinas que une una arista, segun su posicion
-function extremosArista(arista: Arista): [string, string] {
-    const { h, d, p } = arista;
-    switch(p){
-        case 0: return [`${h},${d},0`, `${h + 1},${d},1`];
-        case 1: return [`${h},${d},0`, `${h},${d},1`];
-        default: return [`${h},${d},1`, `${h - 1},${d + 1},0`];
-    }
-}
-
 function otroExtremo(arista: Arista, vertice: string): string {
-    const [v1, v2] = extremosArista(arista);
+    const [v1, v2] = extremosArista(arista.h, arista.d, arista.p);
     return v1 === vertice ? v2 : v1;
 }
