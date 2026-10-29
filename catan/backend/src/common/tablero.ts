@@ -18,3 +18,12 @@ export const coordenadasPuertos = [
     {id: 8, vertices: ["-1,-1,1", "-2,0,0"]},
     {id: 9, vertices: ["-2,1,1", "-3,2,0"]},
 ]
+
+//* Las dos esquinas (claves de vertice) que une la arista h,d,p
+export function extremosArista(h: number, d: number, p: number): [string, string] {
+    switch(p){
+        case 0: return [`${h},${d},0`, `${h + 1},${d},1`];
+        case 1: return [`${h},${d},0`, `${h},${d},1`];
+        default: return [`${h},${d},1`, `${h - 1},${d + 1},0`];
+    }
+}
