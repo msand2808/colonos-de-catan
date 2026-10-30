@@ -2,7 +2,7 @@ import assert from "node:assert";
 import { ColyseusTestServer } from "@colyseus/testing";
 import { servidorDePrueba } from "./servidorDePrueba.js";
 import { Construccion, FaseJuego, FasePartida } from "../src/common/enums.js";
-import { escucharLogs, esperar, prepararJuego } from "./salaEnJuego.js";
+import { ID_BOT, escucharLogs, esperar, prepararJuego } from "./salaEnJuego.js";
 import { actualizarCaminoMasLargo } from "../src/functions/actualizarCaminoMasLargo.js";
 
 //* Las 6 aristas alrededor del hexagono h,d en orden, asi cualquier tramo
@@ -122,5 +122,43 @@ describe("Camino mas largo durante la partida", () => {
 
         assert.strictEqual(room.state.partida.fase, FasePartida.FINALIZADA);
         assert.strictEqual(room.state.partida.ganador, ana.sessionId);
+    });
+
+    describe("no se puede ganar fuera de turno", () => {
+
+        //* Ana es la duenia y el bot (con 8 puntos) la empata. En el turno de Beto,
+        //* su poblado corta el camino de Ana y la carta pasa al bot, que llega a 10
+        async function prepararCartaFueraDeTurno() {
+            const sala = await prepararAnaDuenia();
+            const { room, beto } = sala;
+            ponerCaminos(room, CAMINOS_BETO.slice(0, 5), ID_BOT);
+            const bot = room.state.jugadores.get(ID_BOT);
+            bot.puntuacion = 8;
+            bot.puntosParaGanar = 2;
+
+            room.state.partida.turnoActual = beto.sessionId;
+            ponerCaminos(room, [CAMINO_BETO_AL_MEDIO], beto.sessionId);
+            darRecursos(room, beto.sessionId);
+            room.accionColocarAsentamiento(beto.sessionId, MEDIO_ANA.h, MEDIO_ANA.d, MEDIO_ANA.p);
+            return sala;
+        }
+
+        it("si la carta le llega en el turno de otro, todavia no gana", async () => {
+            const { room } = await prepararCartaFueraDeTurno();
+
+            assert.strictEqual(room.state.partida.caminoMasLargo, ID_BOT);
+            assert.strictEqual(room.state.jugadores.get(ID_BOT).puntosParaGanar, 0);
+            assert.strictEqual(room.state.partida.fase, FasePartida.JUEGO);
+            assert.strictEqual(room.state.partida.ganador, "");
+        });
+
+        it("gana al comenzar su turno", async () => {
+            const { room, beto } = await prepararCartaFueraDeTurno();
+
+            room.accionPasarTurno(beto.sessionId);
+
+            assert.strictEqual(room.state.partida.fase, FasePartida.FINALIZADA);
+            assert.strictEqual(room.state.partida.ganador, ID_BOT);
+        });
     });
 });
