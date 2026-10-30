@@ -14,6 +14,11 @@ const PUNTOS_NUMERO: Record<number, number> = {
     6: 5, 8: 5
 };
 
+//* Puntos de un numero de dado: que tan seguido sale
+export function puntosNumero(numero: number): number {
+    return PUNTOS_NUMERO[numero] ?? 0;
+}
+
 //* Suma de puntos de los hexagonos que toca el vertice. Mismos hexagonos que
 //* en darMaterialInicial
 export function puntosVertice(
@@ -28,7 +33,7 @@ export function puntosVertice(
 
     return claves.reduce((total, clave) => {
         const hexagono = hexagonos.get(clave);
-        return total + (hexagono ? (PUNTOS_NUMERO[hexagono.numero] ?? 0) : 0);
+        return total + (hexagono ? puntosNumero(hexagono.numero) : 0);
     }, 0);
 }
 
