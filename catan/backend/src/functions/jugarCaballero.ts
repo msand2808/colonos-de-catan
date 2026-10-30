@@ -3,6 +3,7 @@ import { Jugador } from "../schemas/Jugador.js";
 import { Desarrollo } from "../common/enums.js";
 import { Partida } from "../schemas/Partida.js";
 import { CatanRoom } from "../rooms/CatanRoom.js";
+import { moverPuntosPremio } from "./moverPuntosPremio.js";
 
 export function jugarCaballero(
     jugadores: MapSchema<Jugador>,
@@ -28,9 +29,8 @@ export function jugarCaballero(
 
     //* Si no hay nadie con el puesto, se otorga directamente
     if(!jugadorMayorEjercito){
+        moverPuntosPremio(jugadores, partida.ejercitoMasGrande, sessionId);
         partida.ejercitoMasGrande = sessionId;
-        jugador.puntuacion += 2;
-        jugador.puntosParaGanar -= 2;
 
         //* Avisar que el jugador ha obtenido el ejercito mas grande
         room.broadcast("log", {
@@ -42,13 +42,8 @@ export function jugarCaballero(
 
     //* Verificar que sea el mayor
     if(jugador.caballerosJugados > jugadorMayorEjercito.caballerosJugados){
-        //* Quitar los 2 puntos del actual
-        jugadorMayorEjercito.puntuacion -= 2;
-        jugadorMayorEjercito.puntosParaGanar += 2;
-
-        //* Dar 2 puntos al nuevo
-        jugador.puntuacion += 2;
-        jugador.puntosParaGanar -= 2;
+        //* Pasar los 2 puntos del duenio actual al nuevo
+        moverPuntosPremio(jugadores, partida.ejercitoMasGrande, sessionId);
 
         //* Asignarlo en la partida como el duenio del ejercito mas grande
         partida.ejercitoMasGrande = sessionId;
