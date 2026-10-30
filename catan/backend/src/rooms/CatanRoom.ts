@@ -27,6 +27,7 @@ import { sacarJugador } from "../functions/sacarJugador.js";
 import { type ResultadoAccion, exito, fallo } from "../common/ResultadoAccion.js";
 import { aristasDelVertice, ordenarAristasPorPuntos, ordenarVerticesPorPuntos } from "../functions/elegirVerticesBot.js";
 import { elegirJugadorParaRobar, ordenarHexagonosParaLadron, recursoParaDescartar } from "../functions/elegirJugadaLadronBot.js";
+import { debeAceptarOferta } from "../functions/evaluarOfertaBot.js";
 
 
 export class CatanRoom extends Room {
@@ -42,6 +43,8 @@ export class CatanRoom extends Room {
   pausaBot = 1000;
   //* Jugada del bot que esta esperando su pausa
   timerBot?: Delayed;
+  //* Respuesta de los bots a una oferta; aparte de timerBot porque la oferta es del turno de un humano
+  timerRespuestasBots?: Delayed;
 
 
   messages = {
@@ -370,6 +373,7 @@ export class CatanRoom extends Room {
 
     //* Cancelar ofertas de intercambio activas
     this.partida.ofertaIntercambio.limpiarOferta()
+    this.timerRespuestasBots?.clear();
 
     siguienteTurno(this.partida);
     this.programarTurnoBot();
@@ -1185,6 +1189,8 @@ export class CatanRoom extends Room {
       mensaje: " ha hecho una oferta de intercambio"
     })
 
+    this.programarRespuestasBots();
+
     return exito();
   }
 
@@ -1278,6 +1284,24 @@ export class CatanRoom extends Room {
         jugador: "Sistema: ",
         mensaje: "Todos los jugadores han rechazado la oferta de intercambio"
       });
+    }
+  }
+
+  //* Agenda la respuesta de los bots a la oferta activa tras la pausa
+  programarRespuestasBots() {
+    this.timerRespuestasBots?.clear();
+    this.timerRespuestasBots = this.clock.setTimeout(() => this.responderBots(), this.pausaBot);
+  }
+
+  //* Cada bot con respuesta pendiente acepta o rechaza. Usa la misma accion que un
+  //* humano; si uno acepta la oferta se cierra y los demas ya no responden
+  responderBots() {
+    for (const [id, respuesta] of [...this.partida.ofertaIntercambio.respuestas.entries()]) {
+      if (this.partida.ofertaIntercambio.jugador === "") return;
+      if (respuesta !== 0 || !this.jugadores.get(id)?.esBot) continue;
+
+      const acepta = debeAceptarOferta(this.jugadores.get(id)!, this.partida.ofertaIntercambio);
+      this.accionResponderIntercambio(id, acepta ? 1 : -1);
     }
   }
 
