@@ -46,13 +46,11 @@ describe("bots en el juego: su turno", () => {
         const dados = ana.waitForMessage("dados", 1000);
 
         room.programarTurnoBot();
-        const { suma } = await dados;
+        await dados;
 
-        //* Con un 7 la partida pasa al ladron (eso lo resuelve otra historia)
-        if (suma !== 7) {
-            await esperarHasta(() => pasoSuTurno(room));
-            assert.ok(pasoSuTurno(room), "sin recursos, el bot debio pasar el turno");
-        }
+        //* Aunque salga un 7, el bot mueve el ladron y sigue: sin recursos, pasa el turno
+        await esperarHasta(() => pasoSuTurno(room));
+        assert.ok(pasoSuTurno(room), "sin recursos, el bot debio pasar el turno");
     });
 
     it("construye primero la ciudad, despues el camino y pasa el turno", async () => {
