@@ -9,7 +9,7 @@ import {
     ordenarVerticesPorPuntos,
     puntosVertice
 } from "../src/functions/elegirVerticesBot.js";
-import { esperar } from "./salaEnJuego.js";
+import { esperar, esperarHasta } from "./salaEnJuego.js";
 
 describe("bots en preconstruccion", () => {
     let colyseus: ColyseusTestServer;
@@ -40,12 +40,6 @@ describe("bots en preconstruccion", () => {
         [...room.state.tablero.vertices.values()].filter((v) => v.propietario === id);
     const caminos = (room: CatanRoom, id: string) =>
         [...room.state.tablero.aristas.values()].filter((a) => a.propietario === id);
-
-    //* Espera a que se cumpla una condicion (el bot juega con un timer)
-    async function esperarHasta(condicion: () => boolean, ms = 2000) {
-        const limite = Date.now() + ms;
-        while (!condicion() && Date.now() < limite) await esperar(10);
-    }
 
     describe("funciones del bot", () => {
         it("puntosVertice suma la probabilidad de los hexagonos que toca", async () => {
@@ -155,18 +149,19 @@ describe("bots en preconstruccion", () => {
             assert.strictEqual(caminos(room, ids[1]).length, 1);
         });
 
-        it("el ultimo turno de la vuelta pasa a JUEGO y el bot ya no actua", async () => {
-            const { room, ids } = await prepararSala(["bot", "ana"]);
+        it("el ultimo turno de la vuelta pasa a JUEGO y el bot lanza los dados una sola vez", async () => {
+            const { room, ana } = await prepararSala(["bot", "ana"]);
             room.state.partida.direccionPreconstruccion = -1;
+            let tiradas = 0;
+            ana.onMessage("dados", () => tiradas++);
 
             room.programarTurnoBot();
             await esperarHasta(() => room.state.partida.fase === FasePartida.JUEGO);
-
             assert.strictEqual(room.state.partida.fase, FasePartida.JUEGO);
-            assert.strictEqual(room.state.partida.faseJuego, FaseJuego.DADOS);
-            const antes = construcciones(room, ids[0]).length;
+
+            await esperarHasta(() => tiradas > 0);
             await esperar(100);
-            assert.strictEqual(construcciones(room, ids[0]).length, antes);
+            assert.strictEqual(tiradas, 1);
         });
 
         it("respeta la pausa antes de jugar", async () => {
