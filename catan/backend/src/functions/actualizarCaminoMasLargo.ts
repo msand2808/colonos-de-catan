@@ -4,6 +4,7 @@ import { Arista } from "../schemas/Arista.js";
 import { Jugador } from "../schemas/Jugador.js";
 import { Partida } from "../schemas/Partida.js";
 import { calcularCaminoMasLargo } from "./calcularCaminoMasLargo.js";
+import { moverPuntosPremio } from "./moverPuntosPremio.js";
 
 //* Caminos seguidos que hacen falta para obtener la carta
 const MINIMO_CAMINO = 5;
@@ -44,17 +45,7 @@ export function actualizarCaminoMasLargo(
 
     //* Mover los 2 puntos si la carta cambio de manos
     if (nuevo !== anterior) {
-        if (duenio) {
-            duenio.puntuacion -= 2;
-            duenio.puntosParaGanar += 2;
-        }
-
-        const ganador = jugadores.get(nuevo);
-        if (ganador) {
-            ganador.puntuacion += 2;
-            ganador.puntosParaGanar -= 2;
-        }
-
+        moverPuntosPremio(jugadores, anterior, nuevo);
         partida.caminoMasLargo = nuevo;
     }
 
