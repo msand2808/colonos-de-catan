@@ -10,6 +10,7 @@ import { siguienteTurno } from "../functions/siguienteTurno.js";
 import { construirAsentamiento } from "../functions/construirAsentamiento.js";
 import { darMaterialInicial } from "../functions/darMaterialInicial.js";
 import { verificarVictoria } from "../functions/verificarVictoria.js";
+import { actualizarCaminoMasLargo } from "../functions/actualizarCaminoMasLargo.js";
 import { construirCiudad } from "../functions/construirCiudad.js";
 import { comerciarBanca } from "../functions/comerciarBanca.js";
 import { descartarRecurso } from "../functions/descartarRecurso.js";
@@ -377,6 +378,11 @@ export class CatanRoom extends Room {
     this.timerRespuestasBots?.clear();
 
     siguienteTurno(this.partida);
+
+    //* Quien llego a 10 fuera de su turno gana al comenzar el suyo
+    const siguiente = this.partida.turnoActual;
+    verificarVictoria(this.partida, this.jugadores.get(siguiente), siguiente, this);
+
     this.programarTurnoBot();
 
     return exito();
@@ -517,8 +523,8 @@ export class CatanRoom extends Room {
         })
       }
 
-      //* Verificar si el jugador ha ganado
-      verificarVictoria(this.partida, jugador, sessionId, this);
+      //* El poblado puede cortar el camino de otro jugador
+      this.despuesDeConstruir(sessionId);
     }
 
     return exito();
@@ -601,6 +607,8 @@ export class CatanRoom extends Room {
           mensaje: resultado.mensaje
         })
       }
+
+      this.despuesDeConstruir(sessionId);
     }
 
     return exito();
@@ -679,6 +687,8 @@ export class CatanRoom extends Room {
     if (resultado.error && resultado.mensaje !== "No tienes caminos disponibles") {
       return fallo(resultado.mensaje);
     }
+
+    this.despuesDeConstruir(sessionId);
 
     // * Reducir la cantidad de caminos gratis restantes
     this.partida.carreterasGratis -= 1;
@@ -1266,6 +1276,41 @@ export class CatanRoom extends Room {
     }
 
     return exito();
+  }
+
+  //* Lo que pasa despues de cada construccion en juego: revisar el camino
+  //* mas largo y si quien construyo llego a 10 puntos
+  despuesDeConstruir(sessionId: string) {
+    this.revisarCaminoMasLargo();
+    verificarVictoria(this.partida, this.jugadores.get(sessionId), sessionId, this);
+  }
+
+  //* Recalcular quien tiene el camino mas largo y avisar si cambio de manos
+  revisarCaminoMasLargo() {
+    const { anterior, nuevo } = actualizarCaminoMasLargo(
+      this.partida, this.tablero.vertices, this.tablero.aristas, this.jugadores
+    );
+    if (nuevo === anterior) return;
+
+    const nombreAnterior = this.jugadores.get(anterior)?.nombre;
+    const nombreNuevo = this.jugadores.get(nuevo)?.nombre;
+
+    if (nombreNuevo && nombreAnterior) {
+      this.broadcast("log", {
+        jugador: nombreNuevo,
+        mensaje: ` ha quitado el camino mas largo a ${nombreAnterior}`
+      });
+    } else if (nombreNuevo) {
+      this.broadcast("log", {
+        jugador: nombreNuevo,
+        mensaje: " ha obtenido el camino mas largo"
+      });
+    } else if (nombreAnterior) {
+      this.broadcast("log", {
+        jugador: "Sistema: ",
+        mensaje: `${nombreAnterior} ha perdido el camino mas largo`
+      });
+    }
   }
 
   //* Registrar el rechazo de un jugador a la oferta activa y cancelarla si todos rechazaron
