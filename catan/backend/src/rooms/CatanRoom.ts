@@ -26,6 +26,7 @@ import { comprarCarta } from "../functions/comprarCarta.js";
 import { sacarJugador } from "../functions/sacarJugador.js";
 import { type ResultadoAccion, exito, fallo } from "../common/ResultadoAccion.js";
 import { aristasDelVertice, ordenarAristasPorPuntos, ordenarVerticesPorPuntos } from "../functions/elegirVerticesBot.js";
+import { elegirJugadorParaRobar, ordenarHexagonosParaLadron, recursoParaDescartar } from "../functions/elegirJugadaLadronBot.js";
 
 
 export class CatanRoom extends Room {
@@ -313,6 +314,9 @@ export class CatanRoom extends Room {
       } else {
         this.partida.faseJuego = FaseJuego.LADRON
       }
+
+      //* Los bots descartan o mueven el ladron sin que nadie los espere
+      this.programarTurnoBot();
 
       return exito();
 
@@ -734,6 +738,9 @@ export class CatanRoom extends Room {
         jugador: "Sistema: ",
         mensaje: "Todos los jugadores han terminado de descartar"
       })
+
+      //* Si el turno es de un bot, ahora le toca mover el ladron
+      this.programarTurnoBot();
       return exito();
     }
 
@@ -1278,6 +1285,16 @@ export class CatanRoom extends Room {
   //* jugada agendada a la vez, asi que llamarlo de mas no hace que juegue doble
   programarTurnoBot() {
     this.timerBot?.clear();
+
+    //* En el descarte juegan los bots que deben descartar, sea o no su turno.
+    //* Si solo faltan humanos, se les espera a ellos
+    if (this.partida.fase === FasePartida.JUEGO && this.partida.faseJuego === FaseJuego.DESCARTE) {
+      if (this.botsPorDescartar().length > 0) {
+        this.timerBot = this.clock.setTimeout(() => this.descartarBots(), this.pausaBot);
+      }
+      return;
+    }
+
     if (!this.jugadores.get(this.partida.turnoActual)?.esBot) return;
 
     if (this.partida.fase === FasePartida.PRECONSTRUCCION) {
@@ -1287,14 +1304,20 @@ export class CatanRoom extends Room {
     }
   }
 
-  //* Un paso del bot en su turno: lanzar los dados, construir una cosa o pasar
-  //* el turno si ya no puede construir nada
+  //* Un paso del bot en su turno: lanzar los dados, mover el ladron y robar si
+  //* salio un 7, construir una cosa o pasar el turno si ya no puede construir nada
   jugarTurnoBot() {
     const id = this.partida.turnoActual;
     if (this.partida.fase !== FasePartida.JUEGO || !this.jugadores.get(id)?.esBot) return;
 
     if (this.partida.faseJuego === FaseJuego.DADOS) {
       this.accionLanzarDados(id);
+    } else if (this.partida.faseJuego === FaseJuego.LADRON) {
+      for (const hexagono of ordenarHexagonosParaLadron(this.tablero, id)) {
+        if (!this.accionMoverLadron(id, hexagono.h, hexagono.d).error) break;
+      }
+    } else if (this.partida.faseJuego === FaseJuego.ROBO) {
+      this.accionRobarJugador(id, elegirJugadorParaRobar(this.jugadores, [...this.partida.jugadoresParaRobar]));
     } else if (this.partida.faseJuego === FaseJuego.ACCIONES) {
       //* accionPasarTurno ya programa al siguiente si tambien es bot
       if (!this.construirBot(id)) {
@@ -1302,8 +1325,28 @@ export class CatanRoom extends Room {
         return;
       }
     } else {
-      //* Con un 7 (descarte, ladron, robo) el bot todavia no sabe que hacer
       return;
+    }
+
+    this.programarTurnoBot();
+  }
+
+  //* Bots que todavia deben descartar por el 7
+  botsPorDescartar(): string[] {
+    return [...this.partida.jugadoresParaDescartar.keys()]
+      .filter((id) => this.jugadores.get(id)?.esBot);
+  }
+
+  //* Cada bot que debe descartar suelta la mitad de sus cartas, siempre del
+  //* recurso que mas tiene. accionDescartarRecursos pasa al ladron al terminar
+  descartarBots() {
+    if (this.partida.faseJuego !== FaseJuego.DESCARTE) return;
+
+    for (const id of this.botsPorDescartar()) {
+      const bot = this.jugadores.get(id);
+      while (this.partida.jugadoresParaDescartar.has(id)) {
+        if (this.accionDescartarRecursos(id, recursoParaDescartar(bot)).error) break;
+      }
     }
 
     this.programarTurnoBot();
