@@ -524,10 +524,7 @@ export class CatanRoom extends Room {
       }
 
       //* El poblado puede cortar el camino de otro jugador
-      this.revisarCaminoMasLargo();
-
-      //* Verificar si el jugador ha ganado
-      verificarVictoria(this.partida, jugador, sessionId, this);
+      this.despuesDeConstruir(sessionId);
     }
 
     return exito();
@@ -611,9 +608,7 @@ export class CatanRoom extends Room {
         })
       }
 
-      //* Revisar el camino mas largo y si con eso gano
-      this.revisarCaminoMasLargo();
-      verificarVictoria(this.partida, jugador, sessionId, this);
+      this.despuesDeConstruir(sessionId);
     }
 
     return exito();
@@ -693,9 +688,7 @@ export class CatanRoom extends Room {
       return fallo(resultado.mensaje);
     }
 
-    // * Revisar el camino mas largo y si con eso gano
-    this.revisarCaminoMasLargo();
-    verificarVictoria(this.partida, jugador, sessionId, this);
+    this.despuesDeConstruir(sessionId);
 
     // * Reducir la cantidad de caminos gratis restantes
     this.partida.carreterasGratis -= 1;
@@ -1283,6 +1276,13 @@ export class CatanRoom extends Room {
     }
 
     return exito();
+  }
+
+  //* Lo que pasa despues de cada construccion en juego: revisar el camino
+  //* mas largo y si quien construyo llego a 10 puntos
+  despuesDeConstruir(sessionId: string) {
+    this.revisarCaminoMasLargo();
+    verificarVictoria(this.partida, this.jugadores.get(sessionId), sessionId, this);
   }
 
   //* Recalcular quien tiene el camino mas largo y avisar si cambio de manos
