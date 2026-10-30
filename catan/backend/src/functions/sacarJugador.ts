@@ -6,6 +6,7 @@ import { Tablero } from "../schemas/Tablero.js";
 import { Partida } from "../schemas/Partida.js";
 import { siguienteTurnoPreconstruccion } from "./siguienteTurnoPreconstruccion.js";
 import { siguienteTurno } from "./siguienteTurno.js";
+import { actualizarCaminoMasLargo } from "./actualizarCaminoMasLargo.js";
 
 
 export function sacarJugador(
@@ -90,6 +91,10 @@ export function sacarJugador(
         partida.ordenJugadores.splice(indice, 1);
     }
     jugadores.delete(sessionId);
+
+    //* Sin sus caminos ni poblados, recalcular el camino mas largo entre los que quedan
+    partida.largoCaminos.delete(sessionId);
+    actualizarCaminoMasLargo(partida, tablero.vertices, tablero.aristas, jugadores);
 
     //* Caso borde de la preconstruccion mover el turno al siguiente jugador
     if (partida.turnoActual === sessionId){

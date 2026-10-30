@@ -10,6 +10,7 @@ import { siguienteTurno } from "../functions/siguienteTurno.js";
 import { construirAsentamiento } from "../functions/construirAsentamiento.js";
 import { darMaterialInicial } from "../functions/darMaterialInicial.js";
 import { verificarVictoria } from "../functions/verificarVictoria.js";
+import { actualizarCaminoMasLargo } from "../functions/actualizarCaminoMasLargo.js";
 import { construirCiudad } from "../functions/construirCiudad.js";
 import { comerciarBanca } from "../functions/comerciarBanca.js";
 import { descartarRecurso } from "../functions/descartarRecurso.js";
@@ -517,6 +518,9 @@ export class CatanRoom extends Room {
         })
       }
 
+      //* El poblado puede cortar el camino de otro jugador
+      this.revisarCaminoMasLargo();
+
       //* Verificar si el jugador ha ganado
       verificarVictoria(this.partida, jugador, sessionId, this);
     }
@@ -601,6 +605,10 @@ export class CatanRoom extends Room {
           mensaje: resultado.mensaje
         })
       }
+
+      //* Revisar el camino mas largo y si con eso gano
+      this.revisarCaminoMasLargo();
+      verificarVictoria(this.partida, jugador, sessionId, this);
     }
 
     return exito();
@@ -679,6 +687,10 @@ export class CatanRoom extends Room {
     if (resultado.error && resultado.mensaje !== "No tienes caminos disponibles") {
       return fallo(resultado.mensaje);
     }
+
+    // * Revisar el camino mas largo y si con eso gano
+    this.revisarCaminoMasLargo();
+    verificarVictoria(this.partida, jugador, sessionId, this);
 
     // * Reducir la cantidad de caminos gratis restantes
     this.partida.carreterasGratis -= 1;
@@ -1266,6 +1278,34 @@ export class CatanRoom extends Room {
     }
 
     return exito();
+  }
+
+  //* Recalcular quien tiene el camino mas largo y avisar si cambio de manos
+  revisarCaminoMasLargo() {
+    const { anterior, nuevo } = actualizarCaminoMasLargo(
+      this.partida, this.tablero.vertices, this.tablero.aristas, this.jugadores
+    );
+    if (nuevo === anterior) return;
+
+    const nombreAnterior = this.jugadores.get(anterior)?.nombre;
+    const nombreNuevo = this.jugadores.get(nuevo)?.nombre;
+
+    if (nombreNuevo && nombreAnterior) {
+      this.broadcast("log", {
+        jugador: nombreNuevo,
+        mensaje: ` ha quitado el camino mas largo a ${nombreAnterior}`
+      });
+    } else if (nombreNuevo) {
+      this.broadcast("log", {
+        jugador: nombreNuevo,
+        mensaje: " ha obtenido el camino mas largo"
+      });
+    } else if (nombreAnterior) {
+      this.broadcast("log", {
+        jugador: "Sistema: ",
+        mensaje: `${nombreAnterior} ha perdido el camino mas largo`
+      });
+    }
   }
 
   //* Registrar el rechazo de un jugador a la oferta activa y cancelarla si todos rechazaron
