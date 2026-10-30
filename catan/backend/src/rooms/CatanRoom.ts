@@ -28,6 +28,7 @@ import { type ResultadoAccion, exito, fallo } from "../common/ResultadoAccion.js
 import { aristasDelVertice, ordenarAristasPorPuntos, ordenarVerticesPorPuntos } from "../functions/elegirVerticesBot.js";
 import { elegirJugadorParaRobar, ordenarHexagonosParaLadron, recursoParaDescartar } from "../functions/elegirJugadaLadronBot.js";
 import { debeAceptarOferta } from "../functions/evaluarOfertaBot.js";
+import { elegirJugadaCarta } from "../functions/elegirCartaBot.js";
 
 
 export class CatanRoom extends Room {
@@ -1342,7 +1343,14 @@ export class CatanRoom extends Room {
       }
     } else if (this.partida.faseJuego === FaseJuego.ROBO) {
       this.accionRobarJugador(id, elegirJugadorParaRobar(this.jugadores, [...this.partida.jugadoresParaRobar]));
+    } else if (this.partida.faseJuego === FaseJuego.CARRETERAS) {
+      this.colocarCaminoGratisBot(id);
     } else if (this.partida.faseJuego === FaseJuego.ACCIONES) {
+      //* Una carta de desarrollo por turno, antes de construir: puede dar lo que falta
+      if (this.partida.cartaJugable && this.jugarCartaBot(id)) {
+        this.programarTurnoBot();
+        return;
+      }
       //* accionPasarTurno ya programa al siguiente si tambien es bot
       if (!this.construirBot(id)) {
         this.accionPasarTurno(id);
@@ -1353,6 +1361,35 @@ export class CatanRoom extends Room {
     }
 
     this.programarTurnoBot();
+  }
+
+  //* Juega la carta que elija elegirJugadaCarta con la misma accion que un humano.
+  //* Devuelve si la jugo; si la accion falla la carta se queda en la mano
+  jugarCartaBot(id: string): boolean {
+    const jugada = elegirJugadaCarta(this.tablero, this.jugadores, this.banca, id);
+    if (!jugada) return false;
+
+    switch (jugada.tipo) {
+      case "caballero":
+        return !this.accionCartaCaballero(id, jugada.h, jugada.d).error;
+      case "carreteras":
+        return !this.accionCartaCarreteras(id).error;
+      case "abundancia":
+        return !this.accionCartaAbundancia(id, jugada.recurso1, jugada.recurso2).error;
+      case "monopolio":
+        return !this.accionCartaMonopolio(id, jugada.recurso).error;
+    }
+  }
+
+  //* Un camino de la carta de carreteras, en la mejor arista valida. Si no hay
+  //* ninguna se cancela lo que queda de la carta para no dejar la partida trabada
+  colocarCaminoGratisBot(id: string) {
+    const { aristas, vertices, hexagonos } = this.tablero;
+    for (const a of ordenarAristasPorPuntos(aristas, vertices, hexagonos)) {
+      if (!this.accionCaminoGratis(id, a.h, a.d, a.p).error) return;
+    }
+    this.partida.carreterasGratis = 0;
+    this.partida.faseJuego = FaseJuego.ACCIONES;
   }
 
   //* Bots que todavia deben descartar por el 7
