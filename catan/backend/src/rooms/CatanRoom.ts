@@ -27,6 +27,8 @@ import { sacarJugador } from "../functions/sacarJugador.js";
 import { type ResultadoAccion, exito, fallo } from "../common/ResultadoAccion.js";
 import { aristasDelVertice, ordenarAristasPorPuntos, ordenarVerticesPorPuntos } from "../functions/elegirVerticesBot.js";
 import { elegirJugadorParaRobar, ordenarHexagonosParaLadron, recursoParaDescartar } from "../functions/elegirJugadaLadronBot.js";
+import { debeAceptarOferta } from "../functions/evaluarOfertaBot.js";
+import { elegirJugadaCarta } from "../functions/elegirCartaBot.js";
 
 
 export class CatanRoom extends Room {
@@ -42,6 +44,8 @@ export class CatanRoom extends Room {
   pausaBot = 1000;
   //* Jugada del bot que esta esperando su pausa
   timerBot?: Delayed;
+  //* Respuesta de los bots a una oferta; aparte de timerBot porque la oferta es del turno de un humano
+  timerRespuestasBots?: Delayed;
 
 
   messages = {
@@ -370,6 +374,7 @@ export class CatanRoom extends Room {
 
     //* Cancelar ofertas de intercambio activas
     this.partida.ofertaIntercambio.limpiarOferta()
+    this.timerRespuestasBots?.clear();
 
     siguienteTurno(this.partida);
     this.programarTurnoBot();
@@ -1185,6 +1190,8 @@ export class CatanRoom extends Room {
       mensaje: " ha hecho una oferta de intercambio"
     })
 
+    this.programarRespuestasBots();
+
     return exito();
   }
 
@@ -1281,6 +1288,24 @@ export class CatanRoom extends Room {
     }
   }
 
+  //* Agenda la respuesta de los bots a la oferta activa tras la pausa
+  programarRespuestasBots() {
+    this.timerRespuestasBots?.clear();
+    this.timerRespuestasBots = this.clock.setTimeout(() => this.responderBots(), this.pausaBot);
+  }
+
+  //* Cada bot con respuesta pendiente acepta o rechaza. Usa la misma accion que un
+  //* humano; si uno acepta la oferta se cierra y los demas ya no responden
+  responderBots() {
+    for (const [id, respuesta] of [...this.partida.ofertaIntercambio.respuestas.entries()]) {
+      if (this.partida.ofertaIntercambio.jugador === "") return;
+      if (respuesta !== 0 || !this.jugadores.get(id)?.esBot) continue;
+
+      const acepta = debeAceptarOferta(this.jugadores.get(id)!, this.partida.ofertaIntercambio);
+      this.accionResponderIntercambio(id, acepta ? 1 : -1);
+    }
+  }
+
   //* Si le toca a un bot, agenda su siguiente jugada tras la pausa. Solo hay una
   //* jugada agendada a la vez, asi que llamarlo de mas no hace que juegue doble
   programarTurnoBot() {
@@ -1318,7 +1343,14 @@ export class CatanRoom extends Room {
       }
     } else if (this.partida.faseJuego === FaseJuego.ROBO) {
       this.accionRobarJugador(id, elegirJugadorParaRobar(this.jugadores, [...this.partida.jugadoresParaRobar]));
+    } else if (this.partida.faseJuego === FaseJuego.CARRETERAS) {
+      this.colocarCaminoGratisBot(id);
     } else if (this.partida.faseJuego === FaseJuego.ACCIONES) {
+      //* Una carta de desarrollo por turno, antes de construir: puede dar lo que falta
+      if (this.partida.cartaJugable && this.jugarCartaBot(id)) {
+        this.programarTurnoBot();
+        return;
+      }
       //* accionPasarTurno ya programa al siguiente si tambien es bot
       if (!this.construirBot(id)) {
         this.accionPasarTurno(id);
@@ -1329,6 +1361,35 @@ export class CatanRoom extends Room {
     }
 
     this.programarTurnoBot();
+  }
+
+  //* Juega la carta que elija elegirJugadaCarta con la misma accion que un humano.
+  //* Devuelve si la jugo; si la accion falla la carta se queda en la mano
+  jugarCartaBot(id: string): boolean {
+    const jugada = elegirJugadaCarta(this.tablero, this.jugadores, this.banca, id);
+    if (!jugada) return false;
+
+    switch (jugada.tipo) {
+      case "caballero":
+        return !this.accionCartaCaballero(id, jugada.h, jugada.d).error;
+      case "carreteras":
+        return !this.accionCartaCarreteras(id).error;
+      case "abundancia":
+        return !this.accionCartaAbundancia(id, jugada.recurso1, jugada.recurso2).error;
+      case "monopolio":
+        return !this.accionCartaMonopolio(id, jugada.recurso).error;
+    }
+  }
+
+  //* Un camino de la carta de carreteras, en la mejor arista valida. Si no hay
+  //* ninguna se cancela lo que queda de la carta para no dejar la partida trabada
+  colocarCaminoGratisBot(id: string) {
+    const { aristas, vertices, hexagonos } = this.tablero;
+    for (const a of ordenarAristasPorPuntos(aristas, vertices, hexagonos)) {
+      if (!this.accionCaminoGratis(id, a.h, a.d, a.p).error) return;
+    }
+    this.partida.carreterasGratis = 0;
+    this.partida.faseJuego = FaseJuego.ACCIONES;
   }
 
   //* Bots que todavia deben descartar por el 7
