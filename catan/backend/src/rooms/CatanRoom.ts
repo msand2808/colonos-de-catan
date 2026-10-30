@@ -378,6 +378,11 @@ export class CatanRoom extends Room {
     this.timerRespuestasBots?.clear();
 
     siguienteTurno(this.partida);
+
+    //* Quien llego a 10 fuera de su turno gana al comenzar el suyo
+    const siguiente = this.partida.turnoActual;
+    verificarVictoria(this.partida, this.jugadores.get(siguiente), siguiente, this);
+
     this.programarTurnoBot();
 
     return exito();
