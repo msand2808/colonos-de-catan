@@ -122,7 +122,7 @@ function Home({ onAbrirMenu }: HomeProps) {
       </nav>
 
       <header className="container text-center mb-5">
-        <Chip label="Beta 1.0 · version jugable" color="primary" variant="outlined" size="small" />
+        <Chip label="Versión 1.2.0 · jugable" color="primary" variant="outlined" size="small" />
         <div className="my-3">
           <HexIsla />
         </div>
