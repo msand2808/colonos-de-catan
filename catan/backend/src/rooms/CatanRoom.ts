@@ -19,7 +19,7 @@ import { robarJugador } from "../functions/robarJugador.js";
 import { jugarCaballero } from "../functions/jugarCaballero.js";
 import { activarCartasCompradas } from "../functions/activarCartasCompradas.js";
 import { intercambiarRecursos } from "../functions/intercambiarRecursos.js";
-import { construirCamino } from "../functions/construirCaminos.js";
+import { construirCamino, hayLugarParaCamino } from "../functions/construirCaminos.js";
 import { jugarAbundancia } from "../functions/jugarAbundancia.js";
 import { jugarMonopolio } from "../functions/jugarMonopolio.js";
 import { siguienteTurnoPreconstruccion } from "../functions/siguienteTurnoPreconstruccion.js";
@@ -354,10 +354,12 @@ export class CatanRoom extends Room {
       return fallo("No es tu turno");
     }
 
-    //* Solo se puede pasar turno en fase de acciones
-    if (this.partida.faseJuego !== FaseJuego.ACCIONES) {
+    //* Solo se puede pasar turno en fase de acciones, o en la de carreteras
+    //* si no se quieren (o no se pueden) colocar los caminos gratis que quedan
+    if (this.partida.faseJuego !== FaseJuego.ACCIONES && this.partida.faseJuego !== FaseJuego.CARRETERAS) {
       return fallo("Termina de lanzar los dados primero");
     }
+    this.partida.carreterasGratis = 0;
 
     //* Log de paso de turno
     this.broadcast("log", {
@@ -693,8 +695,10 @@ export class CatanRoom extends Room {
     // * Reducir la cantidad de caminos gratis restantes
     this.partida.carreterasGratis -= 1;
 
-    // * Si ya no quedan caminos gratis, volver a fase de acciones
-    if (this.partida.carreterasGratis === 0) {
+    // * Si ya no quedan caminos gratis, o no hay donde ponerlos, volver a fase de acciones
+    if (this.partida.carreterasGratis === 0
+      || !hayLugarParaCamino(this.tablero.vertices, this.tablero.aristas, jugador, sessionId)) {
+      this.partida.carreterasGratis = 0;
       this.partida.faseJuego = FaseJuego.ACCIONES
     }
 
