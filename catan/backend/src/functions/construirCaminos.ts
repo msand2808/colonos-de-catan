@@ -126,6 +126,23 @@ function comprobarCaminoPreconstruccion(
     }
 }
 
+// * Para cada posicion de arista: sus 2 vertices extremos y, por cada extremo,
+// * las aristas vecinas que salen de el. Son desplazamientos [h, d, p] desde la arista.
+const EXTREMOS_ARISTA: Record<number, { vertice: number[], vecinas: number[][] }[]> = {
+    0: [
+        { vertice: [0, 0, 0], vecinas: [[0, 0, 1], [1, -1, 2]] },
+        { vertice: [1, 0, 1], vecinas: [[1, 0, 2], [1, 0, 1]] },
+    ],
+    1: [
+        { vertice: [0, 0, 0], vecinas: [[0, 0, 0], [1, -1, 2]] },
+        { vertice: [0, 0, 1], vecinas: [[0, 0, 2], [-1, 0, 0]] },
+    ],
+    2: [
+        { vertice: [0, 0, 1], vecinas: [[0, 0, 1], [-1, 0, 0]] },
+        { vertice: [-1, 1, 0], vecinas: [[-1, 1, 1], [-1, 1, 0]] },
+    ],
+};
+
 function comprobarCaminoJuego(
     vertices: MapSchema<Vertice>,
     aristas: MapSchema<Arista>,
@@ -134,85 +151,27 @@ function comprobarCaminoJuego(
     p: number,
     sessionId: string
 ) {
-    switch(p){
-        case 0: return comprobarCaminoPos0(vertices, aristas, h, d, sessionId);
-        case 1: return comprobarCaminoPos1(vertices, aristas, h, d, sessionId);
-        case 2: return comprobarCaminoPos2(vertices, aristas, h, d, sessionId);
-        default: return false;
-    }
+    const extremos = EXTREMOS_ARISTA[p];
+    if(!extremos) return false;
+
+    // * El camino es valido si alguno de sus extremos lo conecta
+    return extremos.some(({ vertice, vecinas }) => {
+        const v = vertices.get(clave(h, d, vertice));
+
+        // * Una construccion propia en el extremo conecta el camino
+        if(v && v.propietario === sessionId) return true;
+
+        // * Una construccion rival corta el paso por este extremo
+        if(v && v.propietario !== "") return false;
+
+        // * Un camino propio que sale de este extremo conecta el camino
+        return vecinas.some((desplazamiento) =>
+            aristas.get(clave(h, d, desplazamiento))?.propietario === sessionId
+        );
+    });
 }
 
-function comprobarCaminoPos0(
-    vertices: MapSchema<Vertice>,
-    aristas: MapSchema<Arista>,
-    h: number,
-    d: number,
-    sessionId: string
-){
-    // * Verificar si hay un vertice adyacente
-    const v1 = vertices.get(`${h},${d},0`);
-    const v2 = vertices.get(`${h + 1},${d},1`);
-    if(v1 && v1.propietario === sessionId) return true;
-    if(v2 && v2.propietario === sessionId) return true;
-
-    // * Verificar si hay un camino adyacente
-    const a1 = aristas.get(`${h},${d},1`);
-    const a2 = aristas.get(`${h + 1},${d},2`);
-    const a3 = aristas.get(`${h + 1},${d},1`);
-    const a4 = aristas.get(`${h + 1},${d - 1},2`);
-    if(a1 && a1.propietario === sessionId) return true;
-    if(a2 && a2.propietario === sessionId) return true;
-    if(a3 && a3.propietario === sessionId) return true;
-    if(a4 && a4.propietario === sessionId) return true;
-    return false;
-}
-
-function comprobarCaminoPos1(
-    vertices: MapSchema<Vertice>,
-    aristas: MapSchema<Arista>,
-    h: number,
-    d: number,
-    sessionId: string
-){
-    // * Verificar si hay un vertice adyacente
-    const v1 = vertices.get(`${h},${d},0`);
-    const v2 = vertices.get(`${h},${d},1`);
-    if(v1 && v1.propietario === sessionId) return true;
-    if(v2 && v2.propietario === sessionId) return true;
-
-    // * Verificar si hay un camino adyacente
-    const a1 = aristas.get(`${h},${d},0`);
-    const a2 = aristas.get(`${h},${d},2`);
-    const a3 = aristas.get(`${h - 1},${d},0`);
-    const a4 = aristas.get(`${h + 1},${d - 1},2`);
-    if(a1 && a1.propietario === sessionId) return true;
-    if(a2 && a2.propietario === sessionId) return true;
-    if(a3 && a3.propietario === sessionId) return true;
-    if(a4 && a4.propietario === sessionId) return true;
-    return false;
-}
-
-function comprobarCaminoPos2(
-    vertices: MapSchema<Vertice>,
-    aristas: MapSchema<Arista>,
-    h: number,
-    d: number,
-    sessionId: string
-){
-    // * Verificar si hay un vertice adyacente
-    const v1 = vertices.get(`${h},${d},1`);
-    const v2 = vertices.get(`${h - 1},${d + 1},0`);
-    if(v1 && v1.propietario === sessionId) return true;
-    if(v2 && v2.propietario === sessionId) return true;
-
-    // * Verificar si hay un camino adyacente
-    const a1 = aristas.get(`${h},${d},1`);
-    const a2 = aristas.get(`${h - 1},${d},0`);
-    const a3 = aristas.get(`${h - 1},${d + 1},1`);
-    const a4 = aristas.get(`${h - 1},${d + 1},0`);
-    if(a1 && a1.propietario === sessionId) return true;
-    if(a2 && a2.propietario === sessionId) return true;
-    if(a3 && a3.propietario === sessionId) return true;
-    if(a4 && a4.propietario === sessionId) return true;
-    return false;
+// * Clave del mapa a partir de la arista y un desplazamiento [h, d, p]
+function clave(h: number, d: number, [dh, dd, p]: number[]){
+    return `${h + dh},${d + dd},${p}`;
 }
