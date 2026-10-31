@@ -1610,7 +1610,8 @@ export class CatanRoom extends Room {
     }
 
     //* Si ya se estaba jugando se debe eliminar completamente
-    if(this.partida.fase === FasePartida.JUEGO || FasePartida.PRECONSTRUCCION){
+    //* (si la partida ya termino, salir no cambia nada: ni el ganador ni los jugadores)
+    if(this.partidaEnCurso()){
       //* Ver si era el creador de la sala
       const eraCreador = this.partida.creador === client.sessionId;
       
@@ -1647,6 +1648,11 @@ export class CatanRoom extends Room {
         })
       }
     }
+  }
+
+  //* La partida ya empezo y todavia no termina
+  partidaEnCurso() {
+    return this.partida.fase === FasePartida.PRECONSTRUCCION || this.partida.fase === FasePartida.JUEGO;
   }
 
   //* Los que estan esperando reconexion siguen en jugadores, asi que cuentan
