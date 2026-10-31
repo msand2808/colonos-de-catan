@@ -10,6 +10,8 @@ interface Props {
 function InfoTurno({ sessionIdTurno, jugadores, ordenJugadores }: Props) {
   const lista = ordenJugadores.length > 0 ? ordenJugadores : Object.keys(jugadores);
   const nombre = jugadores[sessionIdTurno]?.nombre;
+  // Los bots juegan solos: se avisa que esta jugando para que nadie lo espere
+  const esBot = jugadores[sessionIdTurno]?.esBot ?? false;
   const color = colorDeJugador(lista, sessionIdTurno);
 
   return (
@@ -20,8 +22,14 @@ function InfoTurno({ sessionIdTurno, jugadores, ordenJugadores }: Props) {
       role="status"
       aria-live="polite"
     >
-      <span className="small">Turno de</span>
-      <span className="fw-bold text-truncate mw-100 px-2">{nombre ?? '—'}</span>
+      {esBot ? (
+        <span className="fw-bold text-truncate mw-100 px-2">🤖 {nombre} está jugando…</span>
+      ) : (
+        <>
+          <span className="small">Turno de</span>
+          <span className="fw-bold text-truncate mw-100 px-2">{nombre ?? '—'}</span>
+        </>
+      )}
     </div>
   );
 }
