@@ -1622,6 +1622,12 @@ export class CatanRoom extends Room {
 
       sacarJugador(this.partida, this.tablero, this.banca, this.jugadores, client.sessionId);
 
+      //* Si ya no queda ningun humano, los bots no siguen jugando solos
+      if (!this.quedanHumanos()) {
+        this.cerrarSoloBots();
+        return;
+      }
+
       //* Si el turno paso a un bot, que juegue
       this.programarTurnoBot();
 
@@ -1641,6 +1647,19 @@ export class CatanRoom extends Room {
         })
       }
     }
+  }
+
+  //* Los que estan esperando reconexion siguen en jugadores, asi que cuentan
+  quedanHumanos(): boolean {
+    return [...this.jugadores.values()].some((jugador) => !jugador.esBot);
+  }
+
+  //* Termina la partida y cierra la sala, cancelando lo que los bots tenian pendiente
+  cerrarSoloBots() {
+    this.timerBot?.clear();
+    this.timerRespuestasBots?.clear();
+    this.partida.fase = FasePartida.FINALIZADA;
+    this.disconnect();
   }
 
   onDispose() {
