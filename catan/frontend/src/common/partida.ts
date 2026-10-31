@@ -31,6 +31,12 @@ export interface DatosPartida {
   // sessionId del que tiene el ejercito mas grande. Vacio si todavia nadie.
   ejercitoMasGrande: string;
 
+  // sessionId del que tiene el camino mas largo. Vacio si todavia nadie.
+  caminoMasLargo: string;
+
+  // sessionId -> largo de su camino mas largo (caminos seguidos).
+  largoCaminos: Record<string, number>;
+
   // Carreteras que puede construir sin pagar (carta de carreteras).
   carreterasGratis: number;
 
