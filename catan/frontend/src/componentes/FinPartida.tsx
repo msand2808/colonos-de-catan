@@ -4,13 +4,14 @@ interface Props {
     abierto: boolean;
     nombreGanador: string;
     soyElGanador: boolean;
+    ganadorEsBot: boolean;
     onSalir: () => void;
     onVerTablero: () => void;
 }
 
 //* Modal obligatorio cuando el backend termina la partida (fase FINALIZADA)
 
-function FinPartida({ abierto, nombreGanador, soyElGanador, onSalir, onVerTablero }: Props) {
+function FinPartida({ abierto, nombreGanador, soyElGanador, ganadorEsBot, onSalir, onVerTablero }: Props) {
     return (
         <Dialog
             open={abierto}
@@ -26,7 +27,9 @@ function FinPartida({ abierto, nombreGanador, soyElGanador, onSalir, onVerTabler
             </DialogTitle>
             <DialogContent className="text-center">
                 <Typography variant="h5" component="p" className="fw-bold">
-                    {soyElGanador ? '¡Ganaste la partida!' : `¡${nombreGanador} ganó la partida!`}
+                    {soyElGanador
+                        ? '¡Ganaste la partida!'
+                        : `${ganadorEsBot ? '🤖 ' : ''}¡${nombreGanador} ganó la partida!`}
                 </Typography>
                 <Typography color="text.secondary" sx={{ mt: 1 }}>
                     Puedes salir de la sala o quedarte a ver cómo terminó el tablero.

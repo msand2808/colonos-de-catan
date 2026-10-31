@@ -29,7 +29,7 @@ function InfoJugadores({ jugadores, ordenJugadores, miSessionId, ejercitoMasGran
           >
             <div className="d-flex align-items-center gap-1 min-w-0">
               <span className="flex-grow-1 text-truncate text-white fw-semibold">
-                {yo && '(Yo) '}{j.nombre}
+                {yo && '(Yo) '}{j.esBot && <span title="Bot">🤖 </span>}{j.nombre}
               </span>
               <span className="fw-bold flex-shrink-0 text-white">{j.puntuacion}/10</span>
             </div>
