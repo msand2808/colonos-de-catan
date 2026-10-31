@@ -1,5 +1,7 @@
 import type { Jugadores } from '../common/jugador';
 import { totalCartas, totalRecursos, enRiesgoDeDescarte, colorDeJugador } from '../common/jugador';
+import type { DatosPartida } from '../common/partida';
+import { infoCaminoMasLargo } from '../common/caminoMasLargo';
 
 interface Props {
   jugadores: Jugadores;
@@ -7,9 +9,11 @@ interface Props {
   miSessionId: string;
   // sessionId del que tiene el ejercito mas grande. Vacio si todavia nadie.
   ejercitoMasGrande: string;
+  // Quien tiene el camino mas largo y cuanto mide el de cada uno.
+  partida?: Pick<DatosPartida, 'caminoMasLargo' | 'largoCaminos'>;
 }
 
-function InfoJugadores({ jugadores, ordenJugadores, miSessionId, ejercitoMasGrande }: Props) {
+function InfoJugadores({ jugadores, ordenJugadores, miSessionId, ejercitoMasGrande, partida }: Props) {
   const lista = ordenJugadores.length ? ordenJugadores : Object.keys(jugadores);
 
   return (
@@ -20,6 +24,7 @@ function InfoJugadores({ jugadores, ordenJugadores, miSessionId, ejercitoMasGran
 
         const yo = id === miSessionId;
         const tieneEjercito = ejercitoMasGrande !== '' && id === ejercitoMasGrande;
+        const camino = infoCaminoMasLargo(partida, id);
 
         return (
           <div
@@ -44,6 +49,14 @@ function InfoJugadores({ jugadores, ordenJugadores, miSessionId, ejercitoMasGran
                 className={tieneEjercito ? 'text-warning fw-bold' : 'text-white'}
               >
                 {tieneEjercito && '⚔ '}{j.caballerosJugados} caballeros
+              </span>
+              <span
+                title={camino.tieneCarta
+                  ? 'Camino mas largo (+2 puntos)'
+                  : 'Caminos seguidos. Con 5 o mas se gana el camino mas largo'}
+                className={camino.tieneCarta ? 'text-warning fw-bold' : 'text-white'}
+              >
+                {camino.tieneCarta && '🛣 '}{camino.largo} camino
               </span>
               <span
                 title="Cartas de recurso en la mano"
