@@ -12,7 +12,7 @@ function InfoTurno({ sessionIdTurno, jugadores, ordenJugadores }: Props) {
   const nombre = jugadores[sessionIdTurno]?.nombre;
   // Los bots juegan solos: se avisa que esta jugando para que nadie lo espere
   const esBot = jugadores[sessionIdTurno]?.esBot ?? false;
-  const color = colorDeJugador(lista, sessionIdTurno);
+  const color = colorDeJugador(lista, sessionIdTurno, jugadores);
 
   return (
     <div
