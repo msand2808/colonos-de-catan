@@ -110,7 +110,7 @@ describe("acciones de intercambio: banca, jugadores y respuestas", () => {
             ana.send("msgIntercambiarJugador", { ...oferta, cantidadEntregada: 0 });
             const error = await ana.waitForMessage("error", 1000);
 
-            assert.strictEqual(error.mensajeError, "No tienes suficientes recuros, mi loco");
+            assert.strictEqual(error.mensajeError, "Las cantidades deben ser numeros enteros mayores a 0");
         });
 
         it("rechaza pedir y dar el mismo recurso", async () => {
@@ -125,6 +125,7 @@ describe("acciones de intercambio: banca, jugadores y respuestas", () => {
         it("abre la oferta y la registra en el log", async () => {
             const { room, ana, beto } = await prepararJuego(colyseus);
             const logs = escucharLogs(beto);
+            room.state.jugadores.get(ana.sessionId).recursos.set("madera", 1);
 
             ana.send("msgIntercambiarJugador", oferta);
             await esperar(200);
@@ -229,6 +230,7 @@ describe("acciones de intercambio: banca, jugadores y respuestas", () => {
         it("accionIntercambiarJugador abre la oferta del bot", async () => {
             const { room } = await prepararJuego(colyseus);
             room.state.partida.turnoActual = ID_BOT;
+            room.state.jugadores.get(ID_BOT).recursos.set("madera", 1);
 
             const resultado = room.accionIntercambiarJugador(ID_BOT, "madera", 1, "trigo", 1);
 
