@@ -86,6 +86,9 @@ export interface Jugador {
   caballerosJugados: number;
   // Los bots los agrega el anfitrion en la sala de espera y no tienen conexion.
   esBot: boolean;
+  // Lo asigna el servidor al entrar a la sala y no cambia en toda la partida.
+  // Los datos de prueba no lo traen.
+  color?: string;
 }
 
 /* Aqui SI va un Record de clave suelta, porque las claves son sessionId que no
@@ -94,14 +97,21 @@ export type Jugadores = Record<string, Jugador>;
 
 
 /* --------------------------------------------------------------- color
-   El backend no manda color. Se asigna en el cliente por la posicion del
-   jugador en el orden de turnos, que si publica: asi todos los jugadores ven
-   el mismo color para la misma persona sin que nadie lo mande.
-   Si algun dia el backend agrega el campo, se borra esto y se lee de ahi. */
+   El backend asigna el color al entrar a la sala y lo manda en el jugador.
+   No sale del orden de turnos porque ese orden se mezcla al iniciar y el
+   color cambiaria entre la sala de espera y el tablero.
+   Si no llega (datos de prueba), se usa la posicion en el orden de turnos. */
 
 export const COLORES = ['#D34F3E', '#3E7FD3', '#4CA36B', '#E0A030'];
 
-export function colorDeJugador(ordenJugadores: string[], sessionId: string): string {
+export function colorDeJugador(
+  ordenJugadores: string[],
+  sessionId: string,
+  jugadores?: Record<string, { color?: string }>,
+): string {
+  const color = jugadores?.[sessionId]?.color;
+  if (color) return color;
+
   const posicion = ordenJugadores.indexOf(sessionId);
   return COLORES[(posicion < 0 ? 0 : posicion) % COLORES.length];
 }
