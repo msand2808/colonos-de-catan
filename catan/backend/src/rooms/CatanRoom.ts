@@ -34,6 +34,9 @@ import { elegirJugadaCarta } from "../functions/elegirCartaBot.js";
 //* Segundos que tiene un jugador para reconectarse
 const SEGUNDOS_RECONEXION = 30;
 
+//* Un color por cada lugar de la sala, en el orden en que se reparten
+const COLORES = ["#D34F3E", "#3E7FD3", "#4CA36B", "#E0A030"];
+
 export class CatanRoom extends Room {
   maxClients = 4;
   state = new CatanState();
@@ -163,7 +166,7 @@ export class CatanRoom extends Room {
       while (this.jugadores.has(`bot-${numero}`)) numero++;
       const id = `bot-${numero}`;
 
-      this.jugadores.set(id, new Jugador(`Bot ${numero}`, true));
+      this.jugadores.set(id, new Jugador(`Bot ${numero}`, true, this.colorLibre()));
       this.partida.ordenJugadores.push(id);
       this.actualizarCupo();
     },
@@ -1630,7 +1633,7 @@ export class CatanRoom extends Room {
 
     this.partida.ordenJugadores.push(client.sessionId);
 
-    this.jugadores.set(client.sessionId, new Jugador(options.nombre));
+    this.jugadores.set(client.sessionId, new Jugador(options.nombre, false, this.colorLibre()));
 
     if (this.partida.creador == "") {
       this.partida.creador = client.sessionId;
@@ -1687,6 +1690,12 @@ export class CatanRoom extends Room {
         })
       }
     }
+  }
+
+  //* El primer color que no tiene nadie en la sala
+  colorLibre(): string {
+    const usados = [...this.jugadores.values()].map((jugador) => jugador.color);
+    return COLORES.find((color) => !usados.includes(color)) ?? COLORES[0];
   }
 
   //* La partida ya empezo y todavia no termina

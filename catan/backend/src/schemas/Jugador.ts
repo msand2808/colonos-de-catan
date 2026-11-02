@@ -15,12 +15,15 @@ export class Jugador extends Schema {
     @type("string") ultimoAsentamiento: string;
     @type("uint8") caballerosJugados: number;
     @type("boolean") esBot: boolean;
+    //* Se asigna al entrar a la sala y no cambia aunque se mezcle el orden de turnos
+    @type("string") color: string;
 
 
-    constructor(nombre: string = "", esBot: boolean = false) {
+    constructor(nombre: string = "", esBot: boolean = false, color: string = "") {
         super();
         this.nombre = nombre;
         this.esBot = esBot;
+        this.color = color;
         this.puntuacion = 0;
         this.puntosParaGanar = 10;
         this.ultimoAsentamiento = "";
