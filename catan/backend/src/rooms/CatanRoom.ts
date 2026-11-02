@@ -31,6 +31,8 @@ import { elegirJugadorParaRobar, ordenarHexagonosParaLadron, recursoParaDescarta
 import { debeAceptarOferta } from "../functions/evaluarOfertaBot.js";
 import { elegirJugadaCarta } from "../functions/elegirCartaBot.js";
 
+//* Segundos que tiene un jugador para reconectarse
+const SEGUNDOS_RECONEXION = 30;
 
 export class CatanRoom extends Room {
   maxClients = 4;
@@ -1709,20 +1711,20 @@ export class CatanRoom extends Room {
     console.log("room", this.roomId, "disposing...");
   }
 
-  //* Si un cliente se desconecta tiene 30 segundos para reconectarse
+  //* Si un cliente se desconecta tiene SEGUNDOS_RECONEXION segundos para reconectarse
   onDrop(client: Client, code: CloseCode) {
-    
-    console.log(`${client.sessionId} droppef with code ${code}`);
+
+    console.log(`${client.sessionId} dropped with code ${code}`);
     //* Avisar en el log que alguient tuvo una caida de conexion
     if(this.partida.fase !== FasePartida.LOBBY){
       this.broadcast("log", {
         jugador: this.jugadores.get(client.sessionId)?.nombre,
-        mensaje: " perdio la conexion, tiene 1 minuto para reconectarse"
+        mensaje: ` perdio la conexion, tiene ${SEGUNDOS_RECONEXION} segundos para reconectarse`
       })
     }
 
-    //*Activar la espera de reconexion por 60 segundos
-    this.allowReconnection(client, 30);
+    //*Activar la espera de reconexion
+    this.allowReconnection(client, SEGUNDOS_RECONEXION);
   }
 
   onReconnect(client: Client) {
