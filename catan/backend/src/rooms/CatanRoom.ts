@@ -698,8 +698,7 @@ export class CatanRoom extends Room {
     // * Si ya no quedan caminos gratis, o no hay donde ponerlos, volver a fase de acciones
     if (this.partida.carreterasGratis === 0
       || !hayLugarParaCamino(this.tablero.vertices, this.tablero.aristas, jugador, sessionId)) {
-      this.partida.carreterasGratis = 0;
-      this.partida.faseJuego = FaseJuego.ACCIONES
+      this.terminarCaminosGratis();
     }
 
     return exito();
@@ -1437,6 +1436,12 @@ export class CatanRoom extends Room {
     for (const a of ordenarAristasPorPuntos(aristas, vertices, hexagonos)) {
       if (!this.accionCaminoGratis(id, a.h, a.d, a.p).error) return;
     }
+    this.terminarCaminosGratis();
+  }
+
+  //* Cancelar los caminos gratis que queden de la carta de carreteras y volver a
+  //* las acciones (sea humano o bot)
+  terminarCaminosGratis() {
     this.partida.carreterasGratis = 0;
     this.partida.faseJuego = FaseJuego.ACCIONES;
   }
