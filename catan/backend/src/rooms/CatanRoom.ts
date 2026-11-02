@@ -1180,14 +1180,22 @@ export class CatanRoom extends Room {
       return fallo("Los Recursos seleccionados no son validos");
     }
 
-    // * Verificar que las cantidades tengan sentido
-    if (cantidadEntregada <= 0 || cantidadRecibida <= 0) {
-      return fallo("No tienes suficientes recuros, mi loco");
+    // * Verificar que las cantidades sean numeros enteros mayores a 0
+    if (
+      !Number.isInteger(cantidadEntregada) || !Number.isInteger(cantidadRecibida) ||
+      cantidadEntregada <= 0 || cantidadRecibida <= 0
+    ) {
+      return fallo("Las cantidades deben ser numeros enteros mayores a 0");
     }
 
     // * No se permite pedir y dar lo mismo
     if (recursoEntregado === recursoRecibido) {
       return fallo("No puedes pedir y dar el mismo recurso");
+    }
+
+    // * Verificar que tenga lo que ofrece
+    if (jugador.recursos.get(recursoEntregado) < cantidadEntregada) {
+      return fallo("No tienes suficientes recursos para ofrecer");
     }
 
     // * Llenado de la oferta
