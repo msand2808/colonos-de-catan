@@ -705,6 +705,11 @@ export class CatanRoom extends Room {
   }
 
   accionDescartarRecursos(sessionId: string, recurso: string): ResultadoAccion {
+    //* Verificar que la partida siga en curso
+    if (this.partida.fase === FasePartida.FINALIZADA) {
+      return fallo("La partida ha finalizado");
+    }
+
     //* Verificar si estamos en fase de descarte
     if (this.partida.faseJuego !== FaseJuego.DESCARTE) {
       return fallo("No es la fase de descarte");
@@ -1121,6 +1126,11 @@ export class CatanRoom extends Room {
   }
 
   accionIntercambiarBanca(sessionId: string, recursoEntregado: string, recursoRecibido: string): ResultadoAccion {
+    //* Verificar que la partida siga en curso
+    if (this.partida.fase === FasePartida.FINALIZADA) {
+      return fallo("La partida ha finalizado");
+    }
+
     //* Verificar que sea el turno del jugador
     if (this.partida.turnoActual !== sessionId) {
       return fallo("No es tu turno");
@@ -1155,6 +1165,11 @@ export class CatanRoom extends Room {
   }
 
   accionIntercambiarJugador(sessionId: string, recursoEntregado: string, cantidadEntregada: number, recursoRecibido: string, cantidadRecibida: number): ResultadoAccion {
+    //* Verificar que la partida siga en curso
+    if (this.partida.fase === FasePartida.FINALIZADA) {
+      return fallo("La partida ha finalizado");
+    }
+
     //* Verificar que sea el turno del jugador
     if (this.partida.turnoActual !== sessionId) {
       return fallo("No es tu turno");
@@ -1217,6 +1232,11 @@ export class CatanRoom extends Room {
   }
 
   accionResponderIntercambio(sessionId: string, respuesta: number): ResultadoAccion {
+    //* Verificar que la partida siga en curso
+    if (this.partida.fase === FasePartida.FINALIZADA) {
+      return fallo("La partida ha finalizado");
+    }
+
     // * Verificar que exista una oferta activa
     if (this.partida.ofertaIntercambio.jugador === "") {
       return fallo("No hay una oferta activa");
