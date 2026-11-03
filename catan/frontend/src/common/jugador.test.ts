@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { COLORES, colorDeJugador } from './jugador';
+import { COLORES, colorDeJugador, coloresParaElegir } from './jugador';
 
 const ANA = 'ana';
 const BETO = 'beto';
@@ -19,5 +19,30 @@ describe('colorDeJugador', () => {
 
   it('si el jugador no esta en el orden usa el primer color', () => {
     expect(colorDeJugador([BETO], ANA)).toBe(COLORES[0]);
+  });
+});
+
+describe('coloresParaElegir', () => {
+  const ROJO = COLORES[0];
+  const AZUL = COLORES[1];
+  const jugadores = [
+    { sessionId: ANA, color: ROJO },
+    { sessionId: BETO, color: AZUL },
+  ];
+
+  it('marca cada color de la paleta como mio, ocupado o libre', () => {
+    expect(coloresParaElegir(jugadores, ANA)).toEqual([
+      { color: COLORES[0], estado: 'mio' },
+      { color: COLORES[1], estado: 'ocupado' },
+      { color: COLORES[2], estado: 'libre' },
+      { color: COLORES[3], estado: 'libre' },
+    ]);
+  });
+
+  it('un jugador sin color no ocupa ninguno', () => {
+    const conUnoSinColor = [...jugadores, { sessionId: 'bot-1', color: '' }];
+
+    expect(coloresParaElegir(conUnoSinColor, BETO).map((opcion) => opcion.estado))
+      .toEqual(['ocupado', 'mio', 'libre', 'libre']);
   });
 });
