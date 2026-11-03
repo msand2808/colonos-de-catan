@@ -920,6 +920,12 @@ export class CatanRoom extends Room {
         this.jugadores.get(jugadoresInvolucrados[0])
       )
       this.partida.faseJuego = FaseJuego.ACCIONES;
+
+      //* Log del robo automatico
+      this.broadcast("log", {
+        jugador: this.jugadores.get(sessionId)?.nombre,
+        mensaje: ` ha robado un recurso a ${this.jugadores.get(jugadoresInvolucrados[0])?.nombre}`
+      })
       return exito();
     }
 
