@@ -116,6 +116,22 @@ export function colorDeJugador(
   return COLORES[(posicion < 0 ? 0 : posicion) % COLORES.length];
 }
 
+export type EstadoColor = 'mio' | 'ocupado' | 'libre';
+
+/* Para el selector de la sala de espera: cada color de la paleta, en orden,
+   con si es el mio, lo tiene otro jugador o se puede elegir. El servidor
+   vuelve a revisar que no este ocupado al recibir msgElegirColor. */
+export function coloresParaElegir(
+  jugadores: { sessionId: string; color: string }[],
+  miSessionId: string,
+): { color: string; estado: EstadoColor }[] {
+  return COLORES.map((color) => {
+    const dueno = jugadores.find((jugador) => jugador.color === color);
+    const estado: EstadoColor = !dueno ? 'libre' : dueno.sessionId === miSessionId ? 'mio' : 'ocupado';
+    return { color, estado };
+  });
+}
+
 
 /* cuentas
    No se guardan como campo. Si se guardaran habria que mantenerlas
