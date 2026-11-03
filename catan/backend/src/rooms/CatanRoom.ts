@@ -1149,7 +1149,7 @@ export class CatanRoom extends Room {
 
     //* Verificar que estemos en la fase de acciones
     if (this.partida.faseJuego !== FaseJuego.ACCIONES) {
-      return fallo("Termian de lanzar los dados primero");
+      return fallo("Termina de lanzar los dados primero");
     }
 
     //* Intentar realizar el intercambio con la banca
