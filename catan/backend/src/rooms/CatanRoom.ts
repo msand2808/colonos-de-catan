@@ -812,39 +812,7 @@ export class CatanRoom extends Room {
       })
     }
 
-    //*Extraemos los jugadores involucrados en el robo
-    const jugadoresinvolucrados = resultado.jugadoresInvolucrados;
-
-    //* Si no hay jugadores pasamos a las acciones
-    if (jugadoresinvolucrados.length === 0) {
-      this.partida.faseJuego = FaseJuego.ACCIONES;
-      return exito();
-    }
-
-    //*Si solo hubo un jugador, se le roba automaticamente
-    if (jugadoresinvolucrados.length === 1) {
-      robarJugador(
-        this.jugadores.get(sessionId),
-        this.jugadores.get(jugadoresinvolucrados[0])
-      )
-      this.partida.faseJuego = FaseJuego.ACCIONES;
-
-      //* Log del robo automatico
-      this.broadcast("log", {
-        jugador: this.jugadores.get(sessionId)?.nombre,
-        mensaje: ` ha robado un recurso a ${this.jugadores.get(jugadoresinvolucrados[0])?.nombre}`
-      })
-      return exito();
-    }
-
-    //* Si hay 2 o mas jugadores involucrados, se pasa la lista de jugadores
-    this.partida.jugadoresParaRobar.clear();
-    this.partida.jugadoresParaRobar.push(...jugadoresinvolucrados);
-
-
-    this.partida.faseJuego = FaseJuego.ROBO
-
-    return exito();
+    return this.resolverRobo(sessionId, resultado.jugadoresInvolucrados);
   }
 
   accionCartaCaballero(sessionId: string, h: number, d: number): ResultadoAccion {
@@ -904,11 +872,13 @@ export class CatanRoom extends Room {
     //* Deshabilitar el uso de otra carta este turno
     this.partida.cartaJugable = false;     
 
-    //* Extraemos los jugadores involucrados en el robo
-    const jugadoresInvolucrados = resultado.jugadoresInvolucrados;
+    return this.resolverRobo(sessionId, resultado.jugadoresInvolucrados);
+  }
 
+  //* Despues de mover al ladron (con un 7 o con el caballero) se decide a quien robar
+  resolverRobo(sessionId: string, jugadoresInvolucrados: string[]): ResultadoAccion {
     //* Si no hay jugadores, pasamos a las ACCIONES
-    if (jugadoresInvolucrados.length == 0) {
+    if (jugadoresInvolucrados.length === 0) {
       this.partida.faseJuego = FaseJuego.ACCIONES;
       return exito();
     }
