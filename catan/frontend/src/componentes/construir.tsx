@@ -1,4 +1,5 @@
-import type { Recursos } from '../common/jugador';
+import type { ConstruccionesDisponibles, Recursos } from '../common/jugador';
+import { estadoOpcion, type EstadoOpcion } from '../common/construccion';
 import './construir.css';
 
 // Estos nombres se envían al backend. No usamos las etiquetas visibles para
@@ -20,17 +21,26 @@ interface OpcionConstruccion {
   tipo: TipoConstruccion;
   etiqueta: string;
   ayuda: string;
-  costo: Partial<Recursos>;
 }
 
 const OPCIONES: OpcionConstruccion[] = [
-  { tipo: 'camino', etiqueta: 'Camino', ayuda: 'Selecciona una arista del tablero', costo: { madera: 1, ladrillo: 1 } },
-  { tipo: 'poblado', etiqueta: 'Poblado', ayuda: 'Selecciona un vértice vacío del tablero', costo: { madera: 1, ladrillo: 1, lana: 1, trigo: 1 } },
-  { tipo: 'ciudad', etiqueta: 'Ciudad', ayuda: 'Selecciona uno de tus poblados', costo: { trigo: 2, mineral: 3 } },
+  { tipo: 'camino', etiqueta: 'Camino', ayuda: 'Selecciona una arista del tablero' },
+  { tipo: 'poblado', etiqueta: 'Poblado', ayuda: 'Selecciona un vértice vacío del tablero' },
+  { tipo: 'ciudad', etiqueta: 'Ciudad', ayuda: 'Selecciona uno de tus poblados' },
 ];
+
+// Lo que tiene cada jugador al empezar, por si todavia no llega su estado.
+const PIEZAS_INICIALES: ConstruccionesDisponibles = { '1': 5, '2': 4, '3': 15 };
+
+const AVISO: Record<Exclude<EstadoOpcion, 'disponible'>, string> = {
+  sinPiezas: 'Ya no te quedan piezas',
+  sinRecursos: 'Recursos insuficientes',
+  noDisponible: 'No disponible ahora',
+};
 
 interface Props {
   recursos: Recursos;
+  piezas?: ConstruccionesDisponibles;
   esMiTurno: boolean;
   puedeConstruir: boolean;
   tipoPermitido?: TipoConstruccion | null;
@@ -39,15 +49,10 @@ interface Props {
 }
 
 // El botón se desactiva antes de seleccionar, pero el servidor vuelve a
-// comprobar los recursos para evitar que el cliente pueda falsificarlos.
-function puedePagar(recursos: Recursos, costo: Partial<Recursos>) {
-  return Object.entries(costo).every(([recurso, cantidad]) => {
-    const clave = recurso as keyof Recursos;
-    return recursos[clave] >= cantidad;
-  });
-}
-
-function Construir({ recursos, esMiTurno, puedeConstruir, tipoPermitido = null, seleccion, onSeleccionar }: Props) {
+// comprobar los recursos y las piezas para evitar que el cliente los falsifique.
+function Construir({
+  recursos, piezas = PIEZAS_INICIALES, esMiTurno, puedeConstruir, tipoPermitido = null, seleccion, onSeleccionar,
+}: Props) {
   return (
     <section className="cnMarco" aria-labelledby="construir-titulo">
       <div className="cnCabecera">
@@ -57,9 +62,8 @@ function Construir({ recursos, esMiTurno, puedeConstruir, tipoPermitido = null, 
 
       <div className="cnRejilla">
         {OPCIONES.map((opcion) => {
-        const habilitada = puedeConstruir && (tipoPermitido
-            ? opcion.tipo === tipoPermitido
-            : puedePagar(recursos, opcion.costo));
+          const estado = estadoOpcion({ tipo: opcion.tipo, recursos, piezas, puedeConstruir, tipoPermitido });
+          const habilitada = estado === 'disponible';
           const activa = seleccion === opcion.tipo;
 
           return (
@@ -74,8 +78,7 @@ function Construir({ recursos, esMiTurno, puedeConstruir, tipoPermitido = null, 
               <span className={`cnIcono cnIcono-${opcion.tipo}`} aria-hidden="true" />
               <span className="cnNombre">{opcion.etiqueta}</span>
               <span className="cnAyuda">
-                {habilitada ? opcion.ayuda
-                  : puedeConstruir && !tipoPermitido ? 'Recursos insuficientes' : 'No disponible ahora'}
+                {estado === 'disponible' ? opcion.ayuda : AVISO[estado]}
               </span>
             </button>
           );

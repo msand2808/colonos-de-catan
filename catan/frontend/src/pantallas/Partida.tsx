@@ -654,6 +654,7 @@ function Partida({ sala, onSolicitarConstruccion, onSalir }: Props) {
         <div className="construir">
           <Construir
             recursos={jugadores[miSessionId]?.recursos ?? recursosPrueba}
+            piezas={jugadores[miSessionId]?.construccionesDisponibles}
             esMiTurno={esMiTurno}
             puedeConstruir={puedeConstruir}
             tipoPermitido={tipoPermitido}
