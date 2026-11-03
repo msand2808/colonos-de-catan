@@ -68,8 +68,8 @@ export class CatanRoom extends Room {
         return;
       }
 
-      //* Verificar que el mensaje no este vacio
-      if (mensaje.mensaje.trim() === "") {
+      //* Verificar que el mensaje sea texto y no este vacio
+      if (typeof mensaje?.mensaje !== "string" || mensaje.mensaje.trim() === "") {
         return;
       }
 
