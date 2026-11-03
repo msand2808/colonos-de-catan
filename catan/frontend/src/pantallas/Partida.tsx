@@ -765,6 +765,8 @@ function Partida({ sala, onSolicitarConstruccion, onSalir }: Props) {
                 enviando={intercambioEnEspera}
                 recursosJugador={jugadores[miSessionId]?.recursos ?? recursosPrueba}
                 recursosBanca={banca.recursos}
+                tablero={datosTablero}
+                miSessionId={miSessionId}
                 onAbrir={() => setIntercambioAbierto(true)}
                 onCerrar={() => setIntercambioAbierto(false)}
                 onConfirmar={intercambiarBanca}
