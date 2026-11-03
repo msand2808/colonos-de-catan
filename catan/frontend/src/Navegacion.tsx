@@ -307,6 +307,7 @@ function Navegacion() {
           onIniciarPartida={() => room.send("msgIniciarPartida")}
         onAgregarBot={() => room.send("msgAgregarBot")}
         onQuitarBot={(sessionId) => room.send("msgQuitarBot", { sessionId })}
+          onElegirColor={(color) => room.send("msgElegirColor", { color })}
           onSalir={salirDeSala}
         />
       )}
