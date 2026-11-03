@@ -39,7 +39,7 @@ describe("acciones de intercambio: banca, jugadores y respuestas", () => {
             ana.send("msgIntercambiarBanca", { recursoEntregado: "madera", recursoRecibido: "trigo" });
             const error = await ana.waitForMessage("error", 1000);
 
-            assert.strictEqual(error.mensajeError, "Termian de lanzar los dados primero");
+            assert.strictEqual(error.mensajeError, "Termina de lanzar los dados primero");
         });
 
         it("rechaza intercambiar un recurso por el mismo", async () => {
