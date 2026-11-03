@@ -26,6 +26,7 @@ import Construir, {
   type TipoConstruccion,
 } from '../componentes/construir';
 import { FASE_JUEGO, FASE_PARTIDA, FASE_PRECONSTRUCCION } from '../common/fases';
+import { puedePasarTurno as sePuedePasarTurno } from '../common/turno';
 import Alert from '@mui/material/Alert';
 import Button from '@mui/material/Button';
 import Typography from '@mui/material/Typography';
@@ -376,6 +377,8 @@ function Partida({ sala, onSolicitarConstruccion, onSalir }: Props) {
       && estadoReal?.partida.fase === FASE_PARTIDA.JUEGO
       && estadoReal.partida.faseJuego === FASE_JUEGO.ACCIONES,
   );
+  // El boton de pasar turno tambien se habilita durante la carta de carreteras.
+  const puedeTerminarTurno = Boolean(sala) && sePuedePasarTurno(estadoReal?.partida, miSessionId);
   const puedeIntercambiarBanca = puedePasarTurno && !pasandoTurno;
   const puedeComprarCarta = Boolean(
     sala
@@ -464,7 +467,7 @@ function Partida({ sala, onSolicitarConstruccion, onSalir }: Props) {
 
   function pasarTurno() {
     setConfirmandoPasarTurno(false);
-    if (!sala || !puedePasarTurno || pasandoTurno) return;
+    if (!sala || !puedeTerminarTurno || pasandoTurno) return;
     setPasandoTurno(true);
     // El backend elige al siguiente jugador. No adelantamos el turno localmente.
     sala.send('msgPasarTurno');
@@ -651,6 +654,7 @@ function Partida({ sala, onSolicitarConstruccion, onSalir }: Props) {
         <div className="construir">
           <Construir
             recursos={jugadores[miSessionId]?.recursos ?? recursosPrueba}
+            piezas={jugadores[miSessionId]?.construccionesDisponibles}
             esMiTurno={esMiTurno}
             puedeConstruir={puedeConstruir}
             tipoPermitido={tipoPermitido}
@@ -711,6 +715,7 @@ function Partida({ sala, onSolicitarConstruccion, onSalir }: Props) {
           <Tablero
             datos={datosTablero}
             ordenJugadores={ordenJugadores}
+            jugadores={jugadores}
             miSessionId={miSessionId}
             // Mientras se envia un camino gratis se ocultan las aristas: evita
             // mandar dos y gastar los dos caminos con un doble clic.
@@ -760,6 +765,8 @@ function Partida({ sala, onSolicitarConstruccion, onSalir }: Props) {
                 enviando={intercambioEnEspera}
                 recursosJugador={jugadores[miSessionId]?.recursos ?? recursosPrueba}
                 recursosBanca={banca.recursos}
+                tablero={datosTablero}
+                miSessionId={miSessionId}
                 onAbrir={() => setIntercambioAbierto(true)}
                 onCerrar={() => setIntercambioAbierto(false)}
                 onConfirmar={intercambiarBanca}
@@ -786,13 +793,13 @@ function Partida({ sala, onSolicitarConstruccion, onSalir }: Props) {
             type="button"
             variant="contained"
             fullWidth
-            disabled={!puedePasarTurno || pasandoTurno}
+            disabled={!puedeTerminarTurno || pasandoTurno}
             onClick={() => setConfirmandoPasarTurno(true)}
           >
             {pasandoTurno ? 'Pasando turno…' : 'Pasar turno'}
           </Button>
           <ConfirmarPasarTurno
-            abierto={confirmandoPasarTurno && puedePasarTurno && !pasandoTurno}
+            abierto={confirmandoPasarTurno && puedeTerminarTurno && !pasandoTurno}
             onCancelar={() => setConfirmandoPasarTurno(false)}
             onConfirmar={pasarTurno}
           />

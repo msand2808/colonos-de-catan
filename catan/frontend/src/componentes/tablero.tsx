@@ -77,6 +77,7 @@ interface Props {
   datos: DatosTablero;
   // Para pintar cada pieza del color de su dueño.
   ordenJugadores?: string[];
+  jugadores?: Record<string, { color?: string }>;
   // Solo para resaltar los poblados de el jugador para costruir la Ciudad
   miSessionId?: string;
   tipoConstruccion?: TipoConstruccion | null;
@@ -99,6 +100,7 @@ function esElObjetivo(
 function Tablero({
   datos,
   ordenJugadores = [],
+  jugadores,
   miSessionId = '',
   tipoConstruccion = null,
   objetivoSeleccionado,
@@ -170,7 +172,7 @@ function Tablero({
             ].filter(Boolean).join(' ')}
             stroke={arista.propietario === ''
               ? '#00000018'
-              : colorDeJugador(ordenJugadores, arista.propietario)}
+              : colorDeJugador(ordenJugadores, arista.propietario, jugadores)}
             x1={a[0]} y1={a[1]} x2={b[0]} y2={b[1]}
             role={puedeSeleccionar ? 'button' : undefined}
             tabIndex={puedeSeleccionar ? 0 : undefined}
@@ -251,7 +253,7 @@ function Tablero({
               <PiezaVertice
                 tipo={vertice.constuccion}
                 x={x} y={y} lado={lado}
-                color={colorDeJugador(ordenJugadores, vertice.propietario)}
+                color={colorDeJugador(ordenJugadores, vertice.propietario, jugadores)}
               />
             )}
             <circle

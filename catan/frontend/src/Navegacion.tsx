@@ -29,6 +29,7 @@ interface JugadorEstado {
   nombre: string;
   puntuacion: number;
   esBot: boolean;
+  color: string;
 }
 
 interface EstadoDeSala {
@@ -142,6 +143,7 @@ function Navegacion() {
           nombre: jugador.nombre,
           score: jugador.puntuacion,
           esBot: jugador.esBot,
+          color: jugador.color,
           esUsuarioActual,
           esSuTurno: sessionId === state.partida.turnoActual,
         });

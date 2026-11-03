@@ -19,7 +19,7 @@ import { robarJugador } from "../functions/robarJugador.js";
 import { jugarCaballero } from "../functions/jugarCaballero.js";
 import { activarCartasCompradas } from "../functions/activarCartasCompradas.js";
 import { intercambiarRecursos } from "../functions/intercambiarRecursos.js";
-import { construirCamino } from "../functions/construirCaminos.js";
+import { construirCamino, hayLugarParaCamino } from "../functions/construirCaminos.js";
 import { jugarAbundancia } from "../functions/jugarAbundancia.js";
 import { jugarMonopolio } from "../functions/jugarMonopolio.js";
 import { siguienteTurnoPreconstruccion } from "../functions/siguienteTurnoPreconstruccion.js";
@@ -31,6 +31,11 @@ import { elegirJugadorParaRobar, ordenarHexagonosParaLadron, recursoParaDescarta
 import { debeAceptarOferta } from "../functions/evaluarOfertaBot.js";
 import { elegirJugadaCarta } from "../functions/elegirCartaBot.js";
 
+//* Segundos que tiene un jugador para reconectarse
+const SEGUNDOS_RECONEXION = 30;
+
+//* Un color por cada lugar de la sala, en el orden en que se reparten
+const COLORES = ["#D34F3E", "#3E7FD3", "#4CA36B", "#E0A030"];
 
 export class CatanRoom extends Room {
   maxClients = 4;
@@ -63,8 +68,8 @@ export class CatanRoom extends Room {
         return;
       }
 
-      //* Verificar que el mensaje no este vacio
-      if (mensaje.mensaje.trim() === "") {
+      //* Verificar que el mensaje sea texto y no este vacio
+      if (typeof mensaje?.mensaje !== "string" || mensaje.mensaje.trim() === "") {
         return;
       }
 
@@ -161,7 +166,7 @@ export class CatanRoom extends Room {
       while (this.jugadores.has(`bot-${numero}`)) numero++;
       const id = `bot-${numero}`;
 
-      this.jugadores.set(id, new Jugador(`Bot ${numero}`, true));
+      this.jugadores.set(id, new Jugador(`Bot ${numero}`, true, this.colorLibre()));
       this.partida.ordenJugadores.push(id);
       this.actualizarCupo();
     },
@@ -354,10 +359,12 @@ export class CatanRoom extends Room {
       return fallo("No es tu turno");
     }
 
-    //* Solo se puede pasar turno en fase de acciones
-    if (this.partida.faseJuego !== FaseJuego.ACCIONES) {
+    //* Solo se puede pasar turno en fase de acciones, o en la de carreteras
+    //* si no se quieren (o no se pueden) colocar los caminos gratis que quedan
+    if (this.partida.faseJuego !== FaseJuego.ACCIONES && this.partida.faseJuego !== FaseJuego.CARRETERAS) {
       return fallo("Termina de lanzar los dados primero");
     }
+    this.partida.carreterasGratis = 0;
 
     //* Log de paso de turno
     this.broadcast("log", {
@@ -693,15 +700,21 @@ export class CatanRoom extends Room {
     // * Reducir la cantidad de caminos gratis restantes
     this.partida.carreterasGratis -= 1;
 
-    // * Si ya no quedan caminos gratis, volver a fase de acciones
-    if (this.partida.carreterasGratis === 0) {
-      this.partida.faseJuego = FaseJuego.ACCIONES
+    // * Si ya no quedan caminos gratis, o no hay donde ponerlos, volver a fase de acciones
+    if (this.partida.carreterasGratis === 0
+      || !hayLugarParaCamino(this.tablero.vertices, this.tablero.aristas, jugador, sessionId)) {
+      this.terminarCaminosGratis();
     }
 
     return exito();
   }
 
   accionDescartarRecursos(sessionId: string, recurso: string): ResultadoAccion {
+    //* Verificar que la partida siga en curso
+    if (this.partida.fase === FasePartida.FINALIZADA) {
+      return fallo("La partida ha finalizado");
+    }
+
     //* Verificar si estamos en fase de descarte
     if (this.partida.faseJuego !== FaseJuego.DESCARTE) {
       return fallo("No es la fase de descarte");
@@ -799,39 +812,7 @@ export class CatanRoom extends Room {
       })
     }
 
-    //*Extraemos los jugadores involucrados en el robo
-    const jugadoresinvolucrados = resultado.jugadoresInvolucrados;
-
-    //* Si no hay jugadores pasamos a las acciones
-    if (jugadoresinvolucrados.length === 0) {
-      this.partida.faseJuego = FaseJuego.ACCIONES;
-      return exito();
-    }
-
-    //*Si solo hubo un jugador, se le roba automaticamente
-    if (jugadoresinvolucrados.length === 1) {
-      robarJugador(
-        this.jugadores.get(sessionId),
-        this.jugadores.get(jugadoresinvolucrados[0])
-      )
-      this.partida.faseJuego = FaseJuego.ACCIONES;
-
-      //* Log del robo automatico
-      this.broadcast("log", {
-        jugador: this.jugadores.get(sessionId)?.nombre,
-        mensaje: ` ha robado un recurso a ${this.jugadores.get(jugadoresinvolucrados[0])?.nombre}`
-      })
-      return exito();
-    }
-
-    //* Si hay 2 o mas jugadores involucrados, se pasa la lista de jugadores
-    this.partida.jugadoresParaRobar.clear();
-    this.partida.jugadoresParaRobar.push(...jugadoresinvolucrados);
-
-
-    this.partida.faseJuego = FaseJuego.ROBO
-
-    return exito();
+    return this.resolverRobo(sessionId, resultado.jugadoresInvolucrados);
   }
 
   accionCartaCaballero(sessionId: string, h: number, d: number): ResultadoAccion {
@@ -891,11 +872,13 @@ export class CatanRoom extends Room {
     //* Deshabilitar el uso de otra carta este turno
     this.partida.cartaJugable = false;     
 
-    //* Extraemos los jugadores involucrados en el robo
-    const jugadoresInvolucrados = resultado.jugadoresInvolucrados;
+    return this.resolverRobo(sessionId, resultado.jugadoresInvolucrados);
+  }
 
+  //* Despues de mover al ladron (con un 7 o con el caballero) se decide a quien robar
+  resolverRobo(sessionId: string, jugadoresInvolucrados: string[]): ResultadoAccion {
     //* Si no hay jugadores, pasamos a las ACCIONES
-    if (jugadoresInvolucrados.length == 0) {
+    if (jugadoresInvolucrados.length === 0) {
       this.partida.faseJuego = FaseJuego.ACCIONES;
       return exito();
     }
@@ -907,6 +890,12 @@ export class CatanRoom extends Room {
         this.jugadores.get(jugadoresInvolucrados[0])
       )
       this.partida.faseJuego = FaseJuego.ACCIONES;
+
+      //* Log del robo automatico
+      this.broadcast("log", {
+        jugador: this.jugadores.get(sessionId)?.nombre,
+        mensaje: ` ha robado un recurso a ${this.jugadores.get(jugadoresInvolucrados[0])?.nombre}`
+      })
       return exito();
     }
 
@@ -1118,6 +1107,11 @@ export class CatanRoom extends Room {
   }
 
   accionIntercambiarBanca(sessionId: string, recursoEntregado: string, recursoRecibido: string): ResultadoAccion {
+    //* Verificar que la partida siga en curso
+    if (this.partida.fase === FasePartida.FINALIZADA) {
+      return fallo("La partida ha finalizado");
+    }
+
     //* Verificar que sea el turno del jugador
     if (this.partida.turnoActual !== sessionId) {
       return fallo("No es tu turno");
@@ -1125,7 +1119,7 @@ export class CatanRoom extends Room {
 
     //* Verificar que estemos en la fase de acciones
     if (this.partida.faseJuego !== FaseJuego.ACCIONES) {
-      return fallo("Termian de lanzar los dados primero");
+      return fallo("Termina de lanzar los dados primero");
     }
 
     //* Intentar realizar el intercambio con la banca
@@ -1152,6 +1146,11 @@ export class CatanRoom extends Room {
   }
 
   accionIntercambiarJugador(sessionId: string, recursoEntregado: string, cantidadEntregada: number, recursoRecibido: string, cantidadRecibida: number): ResultadoAccion {
+    //* Verificar que la partida siga en curso
+    if (this.partida.fase === FasePartida.FINALIZADA) {
+      return fallo("La partida ha finalizado");
+    }
+
     //* Verificar que sea el turno del jugador
     if (this.partida.turnoActual !== sessionId) {
       return fallo("No es tu turno");
@@ -1177,14 +1176,22 @@ export class CatanRoom extends Room {
       return fallo("Los Recursos seleccionados no son validos");
     }
 
-    // * Verificar que las cantidades tengan sentido
-    if (cantidadEntregada <= 0 || cantidadRecibida <= 0) {
-      return fallo("No tienes suficientes recuros, mi loco");
+    // * Verificar que las cantidades sean numeros enteros mayores a 0
+    if (
+      !Number.isInteger(cantidadEntregada) || !Number.isInteger(cantidadRecibida) ||
+      cantidadEntregada <= 0 || cantidadRecibida <= 0
+    ) {
+      return fallo("Las cantidades deben ser numeros enteros mayores a 0");
     }
 
     // * No se permite pedir y dar lo mismo
     if (recursoEntregado === recursoRecibido) {
       return fallo("No puedes pedir y dar el mismo recurso");
+    }
+
+    // * Verificar que tenga lo que ofrece
+    if (jugador.recursos.get(recursoEntregado) < cantidadEntregada) {
+      return fallo("No tienes suficientes recursos para ofrecer");
     }
 
     // * Llenado de la oferta
@@ -1206,6 +1213,11 @@ export class CatanRoom extends Room {
   }
 
   accionResponderIntercambio(sessionId: string, respuesta: number): ResultadoAccion {
+    //* Verificar que la partida siga en curso
+    if (this.partida.fase === FasePartida.FINALIZADA) {
+      return fallo("La partida ha finalizado");
+    }
+
     // * Verificar que exista una oferta activa
     if (this.partida.ofertaIntercambio.jugador === "") {
       return fallo("No hay una oferta activa");
@@ -1433,6 +1445,12 @@ export class CatanRoom extends Room {
     for (const a of ordenarAristasPorPuntos(aristas, vertices, hexagonos)) {
       if (!this.accionCaminoGratis(id, a.h, a.d, a.p).error) return;
     }
+    this.terminarCaminosGratis();
+  }
+
+  //* Cancelar los caminos gratis que queden de la carta de carreteras y volver a
+  //* las acciones (sea humano o bot)
+  terminarCaminosGratis() {
     this.partida.carreterasGratis = 0;
     this.partida.faseJuego = FaseJuego.ACCIONES;
   }
@@ -1591,7 +1609,7 @@ export class CatanRoom extends Room {
 
     this.partida.ordenJugadores.push(client.sessionId);
 
-    this.jugadores.set(client.sessionId, new Jugador(options.nombre));
+    this.jugadores.set(client.sessionId, new Jugador(options.nombre, false, this.colorLibre()));
 
     if (this.partida.creador == "") {
       this.partida.creador = client.sessionId;
@@ -1610,7 +1628,8 @@ export class CatanRoom extends Room {
     }
 
     //* Si ya se estaba jugando se debe eliminar completamente
-    if(this.partida.fase === FasePartida.JUEGO || FasePartida.PRECONSTRUCCION){
+    //* (si la partida ya termino, salir no cambia nada: ni el ganador ni los jugadores)
+    if(this.partidaEnCurso()){
       //* Ver si era el creador de la sala
       const eraCreador = this.partida.creador === client.sessionId;
       
@@ -1649,6 +1668,17 @@ export class CatanRoom extends Room {
     }
   }
 
+  //* El primer color que no tiene nadie en la sala
+  colorLibre(): string {
+    const usados = [...this.jugadores.values()].map((jugador) => jugador.color);
+    return COLORES.find((color) => !usados.includes(color)) ?? COLORES[0];
+  }
+
+  //* La partida ya empezo y todavia no termina
+  partidaEnCurso() {
+    return this.partida.fase === FasePartida.PRECONSTRUCCION || this.partida.fase === FasePartida.JUEGO;
+  }
+
   //* Los que estan esperando reconexion siguen en jugadores, asi que cuentan
   quedanHumanos(): boolean {
     return [...this.jugadores.values()].some((jugador) => !jugador.esBot);
@@ -1666,20 +1696,20 @@ export class CatanRoom extends Room {
     console.log("room", this.roomId, "disposing...");
   }
 
-  //* Si un cliente se desconecta tiene 30 segundos para reconectarse
+  //* Si un cliente se desconecta tiene SEGUNDOS_RECONEXION segundos para reconectarse
   onDrop(client: Client, code: CloseCode) {
-    
-    console.log(`${client.sessionId} droppef with code ${code}`);
+
+    console.log(`${client.sessionId} dropped with code ${code}`);
     //* Avisar en el log que alguient tuvo una caida de conexion
     if(this.partida.fase !== FasePartida.LOBBY){
       this.broadcast("log", {
         jugador: this.jugadores.get(client.sessionId)?.nombre,
-        mensaje: " perdio la conexion, tiene 1 minuto para reconectarse"
+        mensaje: ` perdio la conexion, tiene ${SEGUNDOS_RECONEXION} segundos para reconectarse`
       })
     }
 
-    //*Activar la espera de reconexion por 60 segundos
-    this.allowReconnection(client, 30);
+    //*Activar la espera de reconexion
+    this.allowReconnection(client, SEGUNDOS_RECONEXION);
   }
 
   onReconnect(client: Client) {

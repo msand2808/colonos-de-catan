@@ -171,6 +171,23 @@ function comprobarCaminoJuego(
     });
 }
 
+// * Verificar si al jugador le queda algun lugar donde construir un camino
+// * (tiene piezas y hay alguna arista libre que se conecte con lo suyo)
+export function hayLugarParaCamino(
+    vertices: MapSchema<Vertice>,
+    aristas: MapSchema<Arista>,
+    jugador: Jugador,
+    sessionId: string
+){
+    if(jugador.construccionesDisponibles.get(`${Construccion.CAMINO}`) <= 0) return false;
+
+    for(const arista of aristas.values()){
+        if(arista.propietario !== "") continue;
+        if(comprobarCaminoJuego(vertices, aristas, arista.h, arista.d, arista.p, sessionId)) return true;
+    }
+    return false;
+}
+
 // * Clave del mapa a partir de la arista y un desplazamiento [h, d, p]
 function clave(h: number, d: number, [dh, dd, p]: number[]){
     return `${h + dh},${d + dd},${p}`;

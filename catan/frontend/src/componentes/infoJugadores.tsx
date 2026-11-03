@@ -29,7 +29,7 @@ function InfoJugadores({ jugadores, ordenJugadores, miSessionId, ejercitoMasGran
         return (
           <div
             key={id}
-            style={{ backgroundColor: colorDeJugador(lista, id) }}
+            style={{ backgroundColor: colorDeJugador(lista, id, jugadores) }}
             className="flex-fill min-w-0 overflow-hidden p-1 px-2 rounded-3 d-flex flex-column justify-content-center text-white border-0"
           >
             <div className="d-flex align-items-center gap-1 min-w-0">

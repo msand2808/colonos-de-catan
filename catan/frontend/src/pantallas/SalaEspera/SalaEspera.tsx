@@ -17,6 +17,8 @@ export interface JugadorVista {
   nombre: string;
   score: number;
   esBot: boolean;
+  // El mismo color que va a tener en el tablero, lo asigna el servidor.
+  color: string;
   esUsuarioActual: boolean;
   esSuTurno: boolean;
 }
@@ -38,6 +40,11 @@ interface SalaEsperaProps {
 
 function iniciales(texto: string): string {
   return texto.slice(0, 2).toUpperCase();
+}
+
+// Si el servidor todavia no manda el color se usa la posicion del asiento.
+function colorDeAsiento(jugador: JugadorVista, asiento: number): string {
+  return jugador.color || COLORES[asiento % COLORES.length];
 }
 
 type Copiado = "id" | "codigo" | null;
@@ -107,7 +114,7 @@ function SalaEspera({
             {asientos.map((jugador, i) => (
               <div key={i} className="progress flex-fill">
                 {jugador && (
-                  <div className="progress-bar w-100" style={{ backgroundColor: COLORES[i % COLORES.length] }} />
+                  <div className="progress-bar w-100" style={{ backgroundColor: colorDeAsiento(jugador, i) }} />
                 )}
               </div>
             ))}
@@ -131,7 +138,7 @@ function SalaEspera({
                             ✕
                           </IconButton>
                         )}
-                        <Avatar sx={{ bgcolor: COLORES[i % COLORES.length], width: 52, height: 52 }}>
+                        <Avatar sx={{ bgcolor: colorDeAsiento(jugador, i), width: 52, height: 52 }}>
                           {jugador.esBot ? "🤖" : iniciales(jugador.nombre || jugador.sessionId)}
                         </Avatar>
                         <span className="fw-bold small text-truncate mw-100" title={jugador.nombre}>
