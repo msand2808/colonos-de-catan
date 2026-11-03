@@ -5,6 +5,7 @@ import DialogTitle from '@mui/material/DialogTitle';
 import Stack from '@mui/material/Stack';
 import Typography from '@mui/material/Typography';
 import { RECURSOS, type Recurso, type Recursos } from '../common/jugador';
+import { avisoDescarte } from '../common/descarte';
 
 // Se reutilizan los iconos de recursos existentes; el tablero SVG no cambia.
 const ICONOS: Record<Recurso, string> = {
@@ -26,16 +27,16 @@ interface Props {
 function DescartarRecursos({
   pendientes, recursos, esSuTurnoDeDescartar, enviando, onDescartar,
 }: Props) {
+  const aviso = avisoDescarte(pendientes, esSuTurnoDeDescartar);
+
   return (
     <Dialog open={pendientes > 0} fullWidth maxWidth="xs" aria-labelledby="descartar-titulo">
       <DialogTitle id="descartar-titulo">Descartar recursos</DialogTitle>
       <DialogContent>
-        <Typography role="status">
-          Te falta descartar {pendientes} {pendientes === 1 ? 'recurso' : 'recursos'}.
-        </Typography>
-        {!esSuTurnoDeDescartar && (
+        <Typography role="status">{aviso.faltan}</Typography>
+        {aviso.espera && (
           <Typography color="text.secondary" sx={{ mt: 1 }}>
-            Espera a que el jugador anterior termine de descartar.
+            {aviso.espera}
           </Typography>
         )}
         <Stack spacing={1} sx={{ mt: 2 }}>
