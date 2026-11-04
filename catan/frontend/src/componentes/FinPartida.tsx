@@ -3,6 +3,8 @@ import { Button, Dialog, DialogActions, DialogContent, DialogTitle, Typography }
 interface Props {
     abierto: boolean;
     nombreGanador: string;
+    // El mismo color que el ganador tuvo en la sala de espera y en el tablero.
+    colorGanador: string;
     soyElGanador: boolean;
     ganadorEsBot: boolean;
     onSalir: () => void;
@@ -11,7 +13,7 @@ interface Props {
 
 //* Modal obligatorio cuando el backend termina la partida (fase FINALIZADA)
 
-function FinPartida({ abierto, nombreGanador, soyElGanador, ganadorEsBot, onSalir, onVerTablero }: Props) {
+function FinPartida({ abierto, nombreGanador, colorGanador, soyElGanador, ganadorEsBot, onSalir, onVerTablero }: Props) {
     return (
         <Dialog
             open={abierto}
@@ -26,6 +28,11 @@ function FinPartida({ abierto, nombreGanador, soyElGanador, ganadorEsBot, onSali
                 🏆 Partida finalizada
             </DialogTitle>
             <DialogContent className="text-center">
+                <span
+                    aria-hidden="true"
+                    className="d-inline-block rounded-circle mb-2"
+                    style={{ width: 40, height: 40, backgroundColor: colorGanador }}
+                />
                 <Typography variant="h5" component="p" className="fw-bold">
                     {soyElGanador
                         ? '¡Ganaste la partida!'

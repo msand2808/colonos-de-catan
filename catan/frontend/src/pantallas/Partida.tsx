@@ -12,7 +12,7 @@ import { tableroPrueba } from '../datos/tableroPrueba'
 import TablaCostes from '../componentes/tablaCostes';
 import Tablero from '../componentes/tablero';
 import type { Recurso, Recursos } from '../common/jugador';
-import { CARTA } from '../common/jugador';
+import { CARTA, colorDeJugador } from '../common/jugador';
 import type { EstadoCatan } from '../common/estado';
 import type { Coordenada } from '../common/tablero';
 import CarRecursos from '../componentes/carRecursos';
@@ -852,6 +852,7 @@ function Partida({ sala, onSolicitarConstruccion, onSalir }: Props) {
         <FinPartida
           abierto={partidaFinalizada && !verTableroFinal}
           nombreGanador={nombreGanador}
+          colorGanador={colorDeJugador(ordenJugadores, partidaActual?.ganador ?? '', jugadores)}
           soyElGanador={partidaActual?.ganador === miSessionId}
           ganadorEsBot={jugadores[partidaActual?.ganador ?? '']?.esBot ?? false}
           onSalir={() => onSalir?.()}
