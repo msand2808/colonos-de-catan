@@ -9,7 +9,7 @@ import CardContent from "@mui/material/CardContent";
 import Chip from "@mui/material/Chip";
 import IconButton from "@mui/material/IconButton";
 import Typography from "@mui/material/Typography";
-import { COLORES } from "../../common/jugador";
+import { COLORES, coloresParaElegir } from "../../common/jugador";
 import type { InfoSala } from "../sesionGuardada";
 
 export interface JugadorVista {
@@ -35,6 +35,7 @@ interface SalaEsperaProps {
   onIniciarPartida: () => void;
   onAgregarBot: () => void;
   onQuitarBot: (sessionId: string) => void;
+  onElegirColor: (color: string) => void;
   onSalir: () => void;
 }
 
@@ -59,11 +60,13 @@ function SalaEspera({
   onIniciarPartida,
   onAgregarBot,
   onQuitarBot,
+  onElegirColor,
   onSalir,
 }: SalaEsperaProps) {
   const [copiado, setCopiado] = useState<Copiado>(null);
   const temporizador = useRef<ReturnType<typeof setTimeout> | null>(null);
   const puedeIniciar = jugadores.length >= minJugadores;
+  const miSessionId = jugadores.find((jugador) => jugador.esUsuarioActual)?.sessionId;
 
   useEffect(() => () => {
     if (temporizador.current) clearTimeout(temporizador.current);
@@ -163,6 +166,38 @@ function SalaEspera({
               )}
             </ul>
           </div>
+
+          {/* Selector de color: el servidor rechaza los que ya tiene otro jugador. */}
+          {miSessionId && (
+            <div className="w-100 mb-4">
+              <Typography variant="overline" component="div" color="text.secondary">
+                Tu color
+              </Typography>
+              <div className="d-flex justify-content-center gap-2" role="radiogroup" aria-label="Tu color">
+                {coloresParaElegir(jugadores, miSessionId).map(({ color, estado }) => (
+                  <button
+                    key={color}
+                    type="button"
+                    role="radio"
+                    aria-checked={estado === "mio"}
+                    aria-label={estado === "ocupado" ? `${color}, ocupado` : color}
+                    disabled={estado === "ocupado"}
+                    onClick={() => estado === "libre" && onElegirColor(color)}
+                    className="rounded-circle border-0 p-0"
+                    style={{
+                      width: 36,
+                      height: 36,
+                      backgroundColor: color,
+                      opacity: estado === "ocupado" ? 0.3 : 1,
+                      outline: estado === "mio" ? "3px solid currentColor" : "none",
+                      outlineOffset: 2,
+                      cursor: estado === "libre" ? "pointer" : "default",
+                    }}
+                  />
+                ))}
+              </div>
+            </div>
+          )}
 
           <div className="w-100 d-flex flex-column gap-2 mb-4">
             <div className="d-flex flex-column flex-sm-row align-items-sm-center gap-2 p-3 border rounded text-start bg-body-tertiary">

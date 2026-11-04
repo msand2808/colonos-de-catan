@@ -192,6 +192,34 @@ export class CatanRoom extends Room {
       this.sacarDelLobby(mensaje.sessionId);
     },
 
+    msgElegirColor: (
+      client: Client,
+      mensaje: { color: string }
+    ) => {
+      //* Solo se cambia el color antes de empezar, despues ya esta en el tablero
+      if (this.partida.fase !== FasePartida.LOBBY) {
+        client.send("error", { mensajeError: "Solo puedes elegir color en la sala de espera" });
+        return;
+      }
+
+      //* El color tiene que ser uno de la paleta
+      const color = mensaje?.color;
+      if (typeof color !== "string" || !COLORES.includes(color)) {
+        client.send("error", { mensajeError: "Ese color no es valido" });
+        return;
+      }
+
+      //* No se puede repetir el color de otro jugador
+      const ocupado = [...this.jugadores.entries()]
+        .some(([id, jugador]) => id !== client.sessionId && jugador.color === color);
+      if (ocupado) {
+        client.send("error", { mensajeError: "Ese color ya lo tiene otro jugador" });
+        return;
+      }
+
+      this.jugadores.get(client.sessionId).color = color;
+    },
+
     msgPasarTurno: (client: Client) => {
       this.responderAccion(client, this.accionPasarTurno(client.sessionId));
     },
