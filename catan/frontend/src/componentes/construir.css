@@ -88,3 +88,14 @@
 .cnAyuda { color: #617276; font-size: .6875rem; line-height: 1.25; text-align: center; }
 .cnInstruccion { margin: 0; color: #276c86; font-size: .8125rem; }
 @media (max-width: 640px) { .cnRejilla { grid-template-columns: 1fr; } }
+
+/* Modo oscuro: mismo dibujo, con fondos oscuros y el teal mas claro para que se lea */
+:root[data-theme="oscuro"] .cnMarco { border-color: #3a4a4f; background: var(--bs-body-bg); }
+:root[data-theme="oscuro"] .cnTitulo { color: #cfe6ea; }
+:root[data-theme="oscuro"] .cnEstado,
+:root[data-theme="oscuro"] .cnAyuda { color: #a9b8bb; }
+:root[data-theme="oscuro"] .cnOpcion { border-color: #3a4a4f; color: #6cc3d1; background: #1e2a2d; }
+:root[data-theme="oscuro"] .cnOpcion:hover:not(:disabled),
+:root[data-theme="oscuro"] .cnActiva { border-color: #6cc3d1; background: #19393f; }
+:root[data-theme="oscuro"] .cnOpcion:disabled { color: #7f8a8d; background: #23292b; }
+:root[data-theme="oscuro"] .cnInstruccion { color: #7fb6cc; }

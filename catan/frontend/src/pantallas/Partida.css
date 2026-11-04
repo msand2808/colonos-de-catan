@@ -32,7 +32,19 @@
 .finTurno { grid-area: 4 / 6 / 5 / 7; }
 .existencias { grid-area: 3 / 1 / 4 / 2; }
 .infoJugadores { grid-area: 1 / 2 / 2 / 7; }
-.tablero { 
-    grid-area: 2 / 2 / 4 / 6; 
+.tablero {
+    grid-area: 2 / 2 / 4 / 6;
     border: 5px solid white;
+}
+
+/* Modo oscuro: los textos de MUI y Bootstrap se vuelven claros, asi que los
+   paneles toman el fondo oscuro de Bootstrap en vez del blanco. */
+:root[data-theme="oscuro"] .marcoPartida {
+    background-color: #16384a;
+}
+:root[data-theme="oscuro"] .marcoPartida > div:not(.tablero):not(.infoJugadores) {
+    background-color: var(--bs-body-bg);
+}
+:root[data-theme="oscuro"] .tablero {
+    border-color: #2b3035;
 }
