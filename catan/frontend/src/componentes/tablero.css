@@ -102,3 +102,10 @@
   stroke: #4F46E5;
   outline: none;
 }
+
+/* Modo oscuro: solo el mar se vuelve de noche. Los terrenos, las fichas y
+   los puertos se quedan claros para que la isla se siga leyendo igual. */
+:root[data-theme="oscuro"] .tablero { background: #1f4a5e; }
+:root[data-theme="oscuro"] .tbMuelle { stroke: #cbb083; }
+:root[data-theme="oscuro"] .tbObjetivoConstruccion { stroke: #7fd0dc; }
+:root[data-theme="oscuro"] .tbObjetivoLadron { stroke: #7fd0dc; }
