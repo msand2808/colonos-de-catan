@@ -54,6 +54,78 @@
   --radio-lg: 18px;
 }
 
+/* ---------- Modo oscuro ----------
+   App.tsx pone data-theme="oscuro" en <html>. Se cambian solo los colores
+   de fondo y de texto: el mar de noche, el pergamino tostado y la tinta
+   clara. Los terrenos y los botones de color se quedan igual porque ya
+   tienen texto blanco encima. */
+:root[data-theme="oscuro"] {
+  color-scheme: dark;
+
+  --mar: #16384a;
+  --mar-claro: #1f4a5e;
+  --mar-profundo: #0c2433;
+  --mar-oscuro: #7fb6cc;
+
+  --pergamino: #2e2619;
+  --pergamino-claro: #3a3020;
+  --pergamino-oscuro: #4a3e2a;
+  --dorado: #a88a4e;
+  --dorado-claro: #6f5b3a;
+  --tinta: #f3e8d2;
+  --tinta-suave: #cdbb97;
+
+  --teal: #1f8a9b;
+  --pizarra: #d6e2e7;
+
+  --rojo-ficha: #f08a80;
+}
+
+:root[data-theme="oscuro"] .tema-fondo {
+  background:
+    radial-gradient(circle at 18% 8%, rgba(127, 182, 204, 0.18), transparent 38%),
+    radial-gradient(circle at 85% 90%, rgba(0, 0, 0, 0.3), transparent 45%),
+    repeating-radial-gradient(circle at 50% 115%, transparent 0 26px, rgba(255, 255, 255, 0.05) 26px 28px),
+    linear-gradient(180deg, var(--mar-claro), var(--mar) 45%, var(--mar-profundo));
+}
+
+:root[data-theme="oscuro"] .tema-pergamino {
+  background:
+    radial-gradient(circle at 10% 0%, rgba(255, 255, 255, 0.06), transparent 50%),
+    var(--pergamino);
+  box-shadow:
+    0 2px 0 var(--dorado-claro),
+    0 14px 30px -12px rgba(0, 0, 0, 0.7);
+}
+
+:root[data-theme="oscuro"] .tema-volver {
+  background: rgba(46, 38, 25, 0.85);
+}
+
+:root[data-theme="oscuro"] .tema-input::placeholder {
+  color: #8f7f62;
+}
+
+:root[data-theme="oscuro"] .tema-aviso {
+  background: #4a211c;
+  border-color: #8f3f2a;
+}
+
+:root[data-theme="oscuro"] .tema-insignia--publica {
+  color: var(--bosque-claro);
+  background: #1f3524;
+}
+
+:root[data-theme="oscuro"] .tema-insignia--privada {
+  color: #f0a68a;
+  background: #46261b;
+}
+
+:root[data-theme="oscuro"] .tema-insignia--marca {
+  color: #7fd0dc;
+  background: rgba(46, 38, 25, 0.85);
+}
+
 /* ---------- Fondo: el mar alrededor de la isla ---------- */
 .tema-fondo {
   position: relative;
