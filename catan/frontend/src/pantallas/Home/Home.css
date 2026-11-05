@@ -1,14 +1,137 @@
-/* HOME: el resto del estilo viene de Bootstrap y MUI. */
-.home__hex-arte {
+/* HOME: colores y fuentes vienen de tema.css; el marco, de Marco.css. */
+.home__portada {
+  display: grid;
+  grid-template-columns: 1fr;
+  align-items: center;
+  gap: 24px;
+  padding-top: 8px;
+}
+
+.home__arte {
+  order: -1;
+}
+
+.home__isla {
+  display: block;
   width: 100%;
-  max-width: 380px;
+  max-width: 300px;
   height: auto;
+  margin: 0 auto;
+  filter: drop-shadow(0 16px 18px rgba(27, 42, 49, 0.28));
 }
 
-.home__texto {
-  max-width: 480px;
+.home__titular {
+  margin: 0 0 16px;
+  font-size: clamp(2.25rem, 8vw, 4rem);
+  line-height: 1.04;
+  text-wrap: balance;
 }
 
-.home__equipo {
-  max-width: 700px;
+.home__lead {
+  max-width: 44ch;
+  margin: 0 0 28px;
+  font-size: 1.125rem;
+  color: var(--tinta-suave);
+}
+
+.home__cta {
+  font-size: 1.15rem;
+  padding: 14px 32px;
+}
+
+/* ---------- Isla ---------- */
+.home__hex-borde {
+  stroke: var(--pergamino-claro);
+  stroke-width: 4;
+  stroke-linejoin: round;
+}
+
+.home__ficha {
+  fill: #f6efdd;
+  stroke: rgba(0, 0, 0, 0.18);
+  stroke-width: 1.2;
+}
+
+.home__numero {
+  font-family: var(--fuente-titulo);
+  font-size: 13px;
+  font-weight: 600;
+}
+
+/* Los hexágonos aparecen en cascada. El estado base es el visible: con
+   movimiento reducido (animation: none) la isla ya está completa. */
+.home__hex {
+  transform-box: fill-box;
+  transform-origin: center;
+  animation: home-hex-entrada 0.6s cubic-bezier(0.165, 0.84, 0.44, 1) both;
+  animation-delay: calc(var(--i) * 70ms + 120ms);
+}
+
+@keyframes home-hex-entrada {
+  from {
+    opacity: 0;
+    transform: translateY(14px) scale(0.86);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+/* ---------- Pasos ---------- */
+.home__pasos {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 20px;
+  margin: 48px 0 0;
+  padding: 24px 0 0;
+  list-style: none;
+  border-top: 2px dashed var(--dorado-claro);
+}
+
+.home__paso {
+  display: flex;
+  align-items: flex-start;
+  gap: 14px;
+}
+
+.home__paso-numero {
+  flex-shrink: 0;
+  font-family: var(--fuente-titulo);
+  font-size: 2.75rem;
+  font-weight: 600;
+  line-height: 0.9;
+  color: var(--teal);
+}
+
+.home__paso-titulo {
+  margin: 0 0 2px;
+  font-size: 1.1rem;
+}
+
+.home__paso-detalle {
+  margin: 0;
+  max-width: 34ch;
+  color: var(--tinta-suave);
+}
+
+@media (min-width: 900px) {
+  .home__portada {
+    grid-template-columns: 1.05fr 0.95fr;
+    gap: 48px;
+    min-height: 56vh;
+  }
+
+  .home__arte {
+    order: 0;
+  }
+
+  .home__isla {
+    max-width: 480px;
+  }
+
+  .home__pasos {
+    grid-template-columns: repeat(3, 1fr);
+    gap: 32px;
+  }
 }

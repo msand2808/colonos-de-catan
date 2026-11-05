@@ -39,7 +39,7 @@ function IngresarNombre({ nombreInicial = "", onConfirmar, onVolver }: IngresarN
         <Card variant="outlined" className="w-100">
           <CardContent component="form" onSubmit={confirmar} className="p-4">
             <div className="d-flex align-items-center justify-content-between mb-3">
-              <Chip label="Catan Online" color="primary" variant="outlined" size="small" />
+              <Chip label="Colonos de Catán" color="primary" variant="outlined" size="small" />
               <img src="/svg/poblado.svg" alt="" aria-hidden="true" width={32} height={32} />
             </div>
 
