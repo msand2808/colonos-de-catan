@@ -1,0 +1,72 @@
+/* MARCO: el fondo y los colores vienen de tema.css (.tema-fondo). */
+.marco {
+  display: flex;
+  flex-direction: column;
+  padding: env(safe-area-inset-top) env(safe-area-inset-right) env(safe-area-inset-bottom)
+    env(safe-area-inset-left);
+}
+
+/* Grano sutil encima del mar, debajo del contenido. */
+.marco::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+  pointer-events: none;
+  opacity: 0.07;
+  mix-blend-mode: multiply;
+  background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='160' height='160'><filter id='g'><feTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='2' stitchTiles='stitch'/><feColorMatrix values='0 0 0 0 0.23 0 0 0 0 0.16 0 0 0 0 0.09 0 0 0 1 0'/></filter><rect width='100%' height='100%' filter='url(%23g)'/></svg>");
+}
+
+:root[data-theme="oscuro"] .marco::before {
+  mix-blend-mode: screen;
+  opacity: 0.05;
+}
+
+.marco__barra {
+  position: relative;
+  z-index: 1;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  width: 100%;
+  max-width: 1120px;
+  margin: 0 auto;
+  padding: 16px;
+}
+
+.marco__marca {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  font-family: var(--fuente-titulo);
+  font-size: 1.15rem;
+  font-weight: 600;
+  letter-spacing: 0.01em;
+  color: var(--tinta);
+}
+
+.marco__hex {
+  width: 22px;
+  aspect-ratio: 1 / 1.1547;
+  background: var(--teal);
+  clip-path: polygon(50% 0, 100% 25%, 100% 75%, 50% 100%, 0 75%, 0 25%);
+}
+
+.marco__contenido {
+  position: relative;
+  z-index: 1;
+  flex: 1;
+  width: 100%;
+  margin: 0 auto;
+  padding: 8px 16px 48px;
+}
+
+.marco__contenido--angosto {
+  max-width: 480px;
+}
+
+.marco__contenido--ancho {
+  max-width: 1120px;
+}
