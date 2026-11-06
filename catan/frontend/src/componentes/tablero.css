@@ -109,3 +109,19 @@
 :root[data-theme="oscuro"] .tbMuelle { stroke: #cbb083; }
 :root[data-theme="oscuro"] .tbObjetivoConstruccion { stroke: #7fd0dc; }
 :root[data-theme="oscuro"] .tbObjetivoLadron { stroke: #7fd0dc; }
+/* Hexagonos que producen con la tirada: pulso dorado encima del terreno */
+.tbHexProduce {
+    fill: #FFD54A;
+    stroke: #E0A800;
+    stroke-width: 5;
+    pointer-events: none;
+    opacity: 0;
+    animation: tbPulsoDorado 0.8s ease-in-out 4 alternate;
+}
+@keyframes tbPulsoDorado {
+    from { opacity: 0; }
+    to   { opacity: 0.6; }
+}
+@media (prefers-reduced-motion: reduce) {
+    .tbHexProduce { animation: none; opacity: 0.45; }
+}

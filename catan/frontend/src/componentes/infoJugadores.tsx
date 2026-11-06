@@ -29,6 +29,8 @@ function InfoJugadores({ jugadores, ordenJugadores, miSessionId, ejercitoMasGran
         return (
           <div
             key={id}
+            // Hacia aqui vuelan los recursos que gana en cada tirada
+            data-jugador={id}
             style={{ backgroundColor: colorDeJugador(lista, id, jugadores) }}
             className="flex-fill min-w-0 overflow-hidden p-1 px-2 rounded-3 d-flex flex-column justify-content-center text-white border-0"
           >

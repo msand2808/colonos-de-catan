@@ -86,6 +86,8 @@ interface Props {
   // true cuando el jugador debe elegir a que hexagono mover al ladron.
   moviendoLadron?: boolean;
   onSeleccionarHexagonoLadron?: (hexagono: Coordenada) => void;
+  // Claves de los hexagonos que producen con la ultima tirada: brillan un momento.
+  hexagonosResaltados?: string[];
 }
 
 function esElObjetivo(
@@ -107,6 +109,7 @@ function Tablero({
   onSeleccionarObjetivo,
   moviendoLadron = false,
   onSeleccionarHexagonoLadron,
+  hexagonosResaltados = [],
 }: Props) {
 
   return (
@@ -142,8 +145,23 @@ function Tablero({
           key={clave}
           className={`tbHex tbTerreno-${hex.terreno}`}
           points={esquinas(hex.h, hex.d).join(' ')}
+          // Para saber en pantalla de donde salen los recursos de la tirada
+          data-hex={clave}
         />
       ))}
+
+      {/* pulso dorado de los hexagonos que producen con la tirada */}
+      {hexagonosResaltados.map((clave) => {
+        const hex = datos.hexagonos[clave];
+        if (!hex) return null;
+        return (
+          <polygon
+            key={`r${clave}`}
+            className="tbHexProduce"
+            points={esquinas(hex.h, hex.d).join(' ')}
+          />
+        );
+      })}
 
       {/* aristas: los caminos */}
       {Object.entries(datos.aristas).map(([clave, arista]) => {

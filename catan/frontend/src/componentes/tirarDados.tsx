@@ -1,13 +1,10 @@
 import { useEffect, useState } from 'react';
+import type { ResultadoDados } from '../common/dados';
 import './tirarDados.css';
 
 // El resultado siempre llega desde el evento "dados" de CatanRoom.
 // No se generan números en el cliente, para que todos vean la misma tirada.
-export interface ResultadoDados {
-  dado1: number;
-  dado2: number;
-  suma: number;
-}
+export type { ResultadoDados };
 
 interface Props {
   resultado: ResultadoDados | null;
