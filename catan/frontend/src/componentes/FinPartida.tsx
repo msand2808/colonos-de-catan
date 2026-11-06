@@ -1,5 +1,6 @@
 import { Button, Dialog, DialogActions, DialogContent, DialogTitle, Typography } from "@mui/material";
 import type { LugarPodio } from "../common/puntos";
+import Confeti from "./Confeti";
 
 // Lo que se muestra de cada jugador: su lugar, puntos, color y si es bot.
 export type LugarFinal = LugarPodio & { color: string; esBot: boolean };
@@ -26,6 +27,7 @@ function FinPartida({ abierto, nombreGanador, soyElGanador, ganadorEsBot, lugare
     const enPodio = ORDEN_PODIO
         .filter((lugar) => lugar < lugares.length)
         .map((lugar) => ({ lugar, jugador: lugares[lugar] }));
+    const ganador = lugares.find((lugar) => lugar.esGanador);
 
     return (
         <Dialog
@@ -37,6 +39,7 @@ function FinPartida({ abierto, nombreGanador, soyElGanador, ganadorEsBot, lugare
             maxWidth="sm"
             aria-labelledby="fin-partida-titulo"
         >
+            {ganador && <Confeti color={ganador.color} />}
             <DialogTitle id="fin-partida-titulo" className="text-center">
                 🏆 Partida finalizada
             </DialogTitle>
