@@ -125,3 +125,29 @@
 @media (prefers-reduced-motion: reduce) {
     .tbHexProduce { animation: none; opacity: 0.45; }
 }
+
+/* Animaciones de la #47 */
+
+/* Poblados, ciudades y caminos aparecen creciendo desde su centro */
+.tbAparece {
+    transform-box: fill-box;
+    transform-origin: center;
+    animation: tbAparecer 0.4s ease-out;
+}
+@keyframes tbAparecer {
+    from { transform: scale(0); }
+}
+
+/* El ladron se desliza a su nuevo hexagono */
+.tbLadron { transition: transform 0.5s; }
+
+/* Los lugares donde se puede poner el ladron parpadean suave */
+.tbObjetivoLadron { animation: tbLatir 0.9s infinite alternate; }
+@keyframes tbLatir {
+    from { opacity: 0.5; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .tbAparece, .tbObjetivoLadron { animation: none; }
+    .tbLadron { transition: none; }
+}

@@ -32,34 +32,59 @@
   gap: 8px;
 }
 
-/* El GIF antiguo ocupa el mismo espacio que el resultado, sin mover el panel. */
-.tirarDados__animacion {
+.tirarDados__tirada {
   display: grid;
-  place-items: center;
-  width: 100%;
-  min-height: 50px;
-  overflow: hidden;
+  justify-items: center;
+  gap: 6px;
 }
 
-.tirarDados__animacion img {
-  display: block;
-  max-width: 100%;
-  max-height: 70px;
-  object-fit: contain;
-}
-
+/* Cara del dado: 3 columnas de casillas; las que tienen punto se pintan */
 .tirarDados__dado {
   display: grid;
-  place-items: center;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 3px;
   width: 42px;
   height: 42px;
-  color: var(--tinta);
+  padding: 6px;
   background: var(--pergamino-claro);
   border: 2px solid var(--dorado);
   border-radius: var(--radio-sm);
-  box-shadow: 0 2px 0 var(--dorado-claro);
-  font-size: 2rem;
-  line-height: 1;
+  animation: dadoRodar 0.6s ease-out;
+}
+
+.tirarDados__punto {
+  background: var(--tinta);
+  border-radius: 50%;
+}
+
+/* Rodar: empieza girado y pequeño, y termina en su lugar */
+@keyframes dadoRodar {
+  from { transform: rotate(-180deg) scale(0.5); }
+}
+
+/* Si sale 7, el total en rojo */
+.tirarDados--siete .tirarDados__total {
+  color: #C62828;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .tirarDados__dado { animation: none; }
+}
+
+.tirarDados__total {
+  color: #C62828;
+  animation: dadoSacudir 0.4s ease-in-out 0.7s;
+}
+
+@keyframes dadoSacudir {
+  0%, 100% { transform: translateX(0); }
+  25% { transform: translateX(-4px); }
+  75% { transform: translateX(4px); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .tirarDados__dado,
+  .tirarDados--siete .tirarDados__total { animation: none; }
 }
 
 .tirarDados__total {
