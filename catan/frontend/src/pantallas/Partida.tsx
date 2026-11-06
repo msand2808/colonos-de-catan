@@ -19,7 +19,12 @@ import CarRecursos from '../componentes/carRecursos';
 import CarDesarrollo from '../componentes/carDesarrollo';
 import IntercambioBanca from '../componentes/intercambioBanca';
 import DescartarRecursos from '../componentes/descartarRecursos';
-import TirarDados, { type ResultadoDados } from '../componentes/tirarDados';
+import TirarDados from '../componentes/tirarDados';
+import RecursosGanados from '../componentes/recursosGanados';
+import {
+  duracionVuelos, hexagonosQueProducen, medirVuelos, viajesDeRecursos,
+  type ResultadoDados, type VueloRecurso,
+} from '../common/dados';
 import Construir, {
   type ObjetivoConstruccion,
   type SolicitudConstruccion,
@@ -85,6 +90,9 @@ function Partida({ sala, onSolicitarConstruccion, onSalir }: Props) {
   const [objetivoConstruccion, setObjetivoConstruccion] = useState<ObjetivoConstruccion | null>(null);
   const [estadoConstruccion, setEstadoConstruccion] = useState('');
   const [resultadoDados, setResultadoDados] = useState<ResultadoDados | null>(null);
+  // Lo que se anima con cada tirada: hexagonos que producen y recursos en el aire.
+  const [hexagonosResaltados, setHexagonosResaltados] = useState<string[]>([]);
+  const [vuelosRecursos, setVuelosRecursos] = useState<VueloRecurso[]>([]);
   const [lanzandoDados, setLanzandoDados] = useState(false);
   const [pasandoTurno, setPasandoTurno] = useState(false);
   const [confirmandoPasarTurno, setConfirmandoPasarTurno] = useState(false);
@@ -279,6 +287,12 @@ function Partida({ sala, onSolicitarConstruccion, onSalir }: Props) {
     const dejarDeEscucharDados = sala.onMessage('dados', (resultado: ResultadoDados) => {
       setResultadoDados(resultado);
       setLanzandoDados(false);
+      // Con un 7 o sin ganancias no se anima nada; el log lo cuenta como siempre.
+      const tablero = leerEstado(sala)?.tablero;
+      if (tablero) {
+        setHexagonosResaltados(hexagonosQueProducen(tablero, resultado.suma));
+        setVuelosRecursos(medirVuelos(viajesDeRecursos(tablero, resultado)));
+      }
     });
 
     // CatanRoom responde "error" al cliente si una validación falla. El
@@ -328,6 +342,19 @@ function Partida({ sala, onSolicitarConstruccion, onSalir }: Props) {
       dejarDeEscucharLog();
     };
   }, [sala]);
+
+  // El brillo y los vuelos se quitan solos al terminar su animacion.
+  useEffect(() => {
+    if (hexagonosResaltados.length === 0) return;
+    const temporizador = setTimeout(() => setHexagonosResaltados([]), 3200);
+    return () => clearTimeout(temporizador);
+  }, [hexagonosResaltados]);
+
+  useEffect(() => {
+    if (vuelosRecursos.length === 0) return;
+    const temporizador = setTimeout(() => setVuelosRecursos([]), duracionVuelos(vuelosRecursos));
+    return () => clearTimeout(temporizador);
+  }, [vuelosRecursos]);
 
   /* Sin sala, o antes del primer estado, se usan los datos de prueba: tienen la
      misma forma, asi que los componentes no notan la diferencia. Los seis
@@ -724,6 +751,7 @@ function Partida({ sala, onSolicitarConstruccion, onSalir }: Props) {
             onSeleccionarObjetivo={seleccionarObjetivo}
             moviendoLadron={(puedeMoverLadron && !moviendoLadron) || caballero === 'eligiendo'}
             onSeleccionarHexagonoLadron={seleccionarHexagonoLadron}
+            hexagonosResaltados={hexagonosResaltados}
           />
         </div>
         <div className="carRecursos">
@@ -849,6 +877,7 @@ function Partida({ sala, onSolicitarConstruccion, onSalir }: Props) {
             onConfirmar={jugarMonopolio}
           />
         )}
+        <RecursosGanados vuelos={vuelosRecursos} />
         <FinPartida
           abierto={partidaFinalizada && !verTableroFinal}
           nombreGanador={nombreGanador}

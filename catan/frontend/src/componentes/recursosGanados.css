@@ -1,0 +1,28 @@
+/* Recursos ganados en la tirada. Solo se animan transform y opacity. */
+.rgCapa {
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+  z-index: 1300;
+}
+
+.rgVuelo {
+  position: fixed;
+  width: 34px;
+  height: 34px;
+  transform: translate(-50%, -50%);
+  animation-name: rgVolar;
+  animation-timing-function: cubic-bezier(0.5, 0, 0.75, 0);
+  animation-fill-mode: both;
+}
+
+@keyframes rgVolar {
+  0%   { transform: translate(-50%, -50%) scale(0.4); opacity: 0; }
+  20%  { transform: translate(-50%, -50%) scale(1.15); opacity: 1; }
+  100% { transform: translate(calc(-50% + var(--dx)), calc(-50% + var(--dy))) scale(0.6); opacity: 0.3; }
+}
+
+/* Sin movimiento: no se muestran; los recursos igual aparecen en el panel */
+@media (prefers-reduced-motion: reduce) {
+  .rgVuelo { display: none; }
+}

@@ -125,4 +125,57 @@ describe("repartirRecursos", () => {
         assert.strictEqual(e.banca.recursos.get("madera"), 0);
     });
 
+    describe("devuelve lo que gano cada jugador", () => {
+
+        it("por jugador y por recurso, contando las ciudades doble", () => {
+            const e = crearEscenario();
+            e.banca.recursos.set("madera", 19);
+            e.banca.recursos.set("trigo", 19);
+            construir(e.vertices, "0,0,0", "A", Construccion.ASENTAMIENTO);
+            construir(e.vertices, "0,0,1", "B", Construccion.CIUDAD);
+            construir(e.vertices, "4,4,0", "A", Construccion.ASENTAMIENTO);
+
+            const ganancias = repartirRecursos([e.maderaUno, e.trigo], e.vertices, e.jugadores, e.banca, e.ladron);
+
+            assert.deepStrictEqual(ganancias, {
+                A: { madera: 1, trigo: 1 },
+                B: { madera: 2 }
+            });
+        });
+
+        it("si la banca no alcanza, ese recurso no aparece en las ganancias", () => {
+            const e = crearEscenario();
+            e.banca.recursos.set("madera", 2);
+            construir(e.vertices, "0,0,0", "A", Construccion.ASENTAMIENTO);
+            construir(e.vertices, "0,0,1", "B", Construccion.CIUDAD);
+
+            const ganancias = repartirRecursos([e.maderaUno], e.vertices, e.jugadores, e.banca, e.ladron);
+
+            assert.deepStrictEqual(ganancias, {});
+        });
+
+        it("si un solo jugador se lleva lo que queda, gana solo eso", () => {
+            const e = crearEscenario();
+            e.banca.recursos.set("madera", 2);
+            construir(e.vertices, "0,0,0", "A", Construccion.CIUDAD);
+            construir(e.vertices, "2,2,0", "A", Construccion.ASENTAMIENTO);
+
+            const ganancias = repartirRecursos([e.maderaUno, e.maderaDos], e.vertices, e.jugadores, e.banca, e.ladron);
+
+            assert.deepStrictEqual(ganancias, { A: { madera: 2 } });
+        });
+
+        it("el hexagono con el ladron no da ganancias", () => {
+            const e = crearEscenario();
+            e.banca.recursos.set("madera", 19);
+            e.ladron.h = 0;
+            e.ladron.d = 0;
+            construir(e.vertices, "0,0,0", "A", Construccion.ASENTAMIENTO);
+
+            const ganancias = repartirRecursos([e.maderaUno], e.vertices, e.jugadores, e.banca, e.ladron);
+
+            assert.deepStrictEqual(ganancias, {});
+        });
+    });
+
 });

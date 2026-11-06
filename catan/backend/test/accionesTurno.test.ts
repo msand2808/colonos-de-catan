@@ -59,6 +59,41 @@ describe("acciones de turno: lanzar dados y pasar turno", () => {
             assert.strictEqual(dados.suma, dados.dado1 + dados.dado2);
             assert.notStrictEqual(room.state.partida.faseJuego, FaseJuego.DADOS);
         });
+
+        it("el resultado incluye lo que gano cada jugador, igual a lo que recibio", async () => {
+            const { room, ana, beto } = await prepararJuego(colyseus, FaseJuego.DADOS);
+            //* Ana tiene un poblado en cada esquina: casi cualquier tirada le da algo
+            room.state.tablero.vertices.forEach((vertice) => vertice.setPropietario(ana.sessionId));
+            const recursosAna = room.state.jugadores.get(ana.sessionId)!.recursos;
+            const antes = new Map(recursosAna.entries());
+
+            ana.send("msgLanzarDados");
+            const dados = await beto.waitForMessage("dados", 1000);
+
+            const gano: Record<string, number> = {};
+            recursosAna.forEach((cantidad, recurso) => {
+                if (cantidad !== antes.get(recurso)) gano[recurso] = cantidad - antes.get(recurso)!;
+            });
+            const esperado = Object.keys(gano).length > 0 ? { [ana.sessionId]: gano } : {};
+            assert.deepStrictEqual(dados.ganancias, esperado);
+        });
+
+        it("con un 7 nadie gana nada", async () => {
+            const { room, ana } = await prepararJuego(colyseus, FaseJuego.DADOS);
+            //* Se repite hasta que salga un 7 (en promedio 1 de cada 6 tiradas)
+            for (let intento = 0; intento < 60; intento++) {
+                room.state.partida.faseJuego = FaseJuego.DADOS;
+                room.state.partida.turnoActual = ana.sessionId;
+                const dados = ana.waitForMessage("dados", 1000);
+                ana.send("msgLanzarDados");
+                const resultado = await dados;
+                if (resultado.suma === 7) {
+                    assert.deepStrictEqual(resultado.ganancias, {});
+                    return;
+                }
+            }
+            assert.fail("no salio ningun 7 en 60 tiradas");
+        });
     });
 
     describe("msgPasarTurno", () => {
