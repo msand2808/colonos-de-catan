@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { hexagonosQueProducen, viajesDeRecursos, type ResultadoDados } from './dados';
+import { hexagonosQueProducen, puntosDelDado, viajesDeRecursos, type ResultadoDados } from './dados';
 import { TERRENO, type DatosTablero, type HexagonoDato, type VerticeDato } from './tablero';
 
 const ANA = 'ana';
@@ -74,5 +74,21 @@ describe('viajesDeRecursos', () => {
   it('si el resultado no trae ganancias (servidor viejo) no falla', () => {
     const sinGanancias = { dado1: 4, dado2: 4, suma: 8 } as ResultadoDados;
     expect(viajesDeRecursos(tablero(), sinGanancias)).toEqual([]);
+  });
+});
+
+describe('puntosDelDado', () => {
+  it('marca las casillas de la cuadricula 3x3 que lleva cada cara', () => {
+    expect(puntosDelDado(1)).toEqual([4]);
+    expect(puntosDelDado(2)).toEqual([0, 8]);
+    expect(puntosDelDado(3)).toEqual([0, 4, 8]);
+    expect(puntosDelDado(4)).toEqual([0, 2, 6, 8]);
+    expect(puntosDelDado(5)).toEqual([0, 2, 4, 6, 8]);
+    expect(puntosDelDado(6)).toEqual([0, 2, 3, 5, 6, 8]);
+  });
+
+  it('con un valor fuera de 1 a 6 no dibuja puntos', () => {
+    expect(puntosDelDado(0)).toEqual([]);
+    expect(puntosDelDado(7)).toEqual([]);
   });
 });
