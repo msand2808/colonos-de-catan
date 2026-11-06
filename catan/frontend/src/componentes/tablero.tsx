@@ -22,6 +22,8 @@ function PiezaVertice(
       transform={`translate(${x - lado / 2} ${y - lado / 2}) scale(${lado / 24})`}
       pointerEvents="none"
     >
+      {/* Grupo aparte para el rebote: el de arriba ya usa transform para ubicarse */}
+      <g className="tbAparece">
       {tipo === 2 ? (
         <>
           <path d="M3 21.6V8.6L7.8 3.4l4.8 5.2v13Z" {...pintura} />
@@ -30,6 +32,7 @@ function PiezaVertice(
       ) : (
         <path d="M12 4 21 12.2v7.8H3v-7.8Z" {...pintura} />
       )}
+      </g>
     </g>
   );
 }
@@ -170,7 +173,7 @@ function Tablero({
         return (
           <line
             key={`borde${clave}`}
-            className="tbArista tbAristaBorde"
+            className="tbArista tbAristaBorde tbAparece"
             x1={a[0]} y1={a[1]} x2={b[0]} y2={b[1]}
           />
         );
@@ -182,9 +185,10 @@ function Tablero({
         const objetivo = { h: arista.h, d: arista.d, p: arista.p };
         return (
           <line
-            key={clave}
+            // Al cambiar de dueño se vuelve a montar y rebota
+            key={`${clave}-${arista.propietario}`}
             className={[
-              arista.propietario === '' ? 'tbArista' : 'tbArista tbAristaOcupada',
+              arista.propietario === '' ? 'tbArista' : 'tbArista tbAristaOcupada tbAparece',
               puedeSeleccionar ? 'tbObjetivoConstruccion' : '',
               seleccionado ? 'tbObjetivoSeleccionado' : '',
             ].filter(Boolean).join(' ')}
@@ -218,15 +222,20 @@ function Tablero({
                 <text x={cx} y={cy} className="tbFichaNumero">{hex.numero}</text>
               </g>
             )}
-            {hex.esLadron && (
-              <g className="tbLadron">
-                <ellipse cx={cx} cy={cy + S * 0.18} rx={S * 0.2} ry={S * 0.16} />
-                <circle cx={cx} cy={cy - S * 0.1} r={S * 0.13} />
-              </g>
-            )}
           </g>
         );
       })}
+
+      {/* Un solo ladron que se desliza a su nuevo hexagono (transition en el css) */}
+      {(() => {
+        const [cx, cy] = centro(datos.ladron.h, datos.ladron.d);
+        return (
+          <g className="tbLadron" style={{ transform: `translate(${cx}px, ${cy}px)` }}>
+            <ellipse cx={0} cy={S * 0.18} rx={S * 0.2} ry={S * 0.16} />
+            <circle cx={0} cy={-S * 0.1} r={S * 0.13} />
+          </g>
+        );
+      })()}
 
       {/* Mover al ladron: un circulo en el centro de cada hexagono para elegirlo.
           No se dibuja donde esta el ladron ahora (esLadron), porque el
@@ -269,6 +278,7 @@ function Tablero({
           <g key={clave}>
             {vertice.constuccion !== 0 && (
               <PiezaVertice
+                key={vertice.constuccion}
                 tipo={vertice.constuccion}
                 x={x} y={y} lado={lado}
                 color={colorDeJugador(ordenJugadores, vertice.propietario, jugadores)}

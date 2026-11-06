@@ -117,3 +117,18 @@ export function medirVuelos(viajes: ViajeRecurso[]): VueloRecurso[] {
 export function duracionVuelos(vuelos: VueloRecurso[]): number {
   return vuelos.length === 0 ? 0 : DURACION_VUELO + (vuelos.length - 1) * SEPARACION_VUELOS;
 }
+
+/* Casillas (0 a 8, de izquierda a derecha y de arriba abajo) de la cuadricula
+   3x3 donde va un punto en cada cara del dado. */
+const PUNTOS_DADO: Record<number, number[]> = {
+  1: [4],
+  2: [0, 8],
+  3: [0, 4, 8],
+  4: [0, 2, 6, 8],
+  5: [0, 2, 4, 6, 8],
+  6: [0, 2, 3, 5, 6, 8],
+};
+
+export function puntosDelDado(valor: number): number[] {
+  return PUNTOS_DADO[valor] ?? [];
+}
