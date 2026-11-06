@@ -8,13 +8,17 @@ import { recursoTexto } from "../common/recursoTexto.js";
 import { Construccion } from "../common/enums.js";
 import { verticesDelHexagono } from "./verticesDelHexagono.js";
 
+//* Lo que gano cada jugador en una tirada: sessionId -> (recurso -> cantidad)
+export type Ganancias = Record<string, Record<string, number>>;
+
+//* Da los recursos de los hexagonos de la tirada y devuelve lo que gano cada jugador
 export function repartirRecursos(
     hexagonos: Hexagono[],
     vertices: MapSchema<Vertice>,
     jugadores: MapSchema<Jugador>,
     banca: Banca,
     ladron: Coordenada
-){
+): Ganancias {
     //* Cuanto le toca a cada jugador de cada recurso: recurso -> (sessionId -> cantidad)
     const pedidos = new Map<string, Map<string, number>>();
 
@@ -35,6 +39,8 @@ export function repartirRecursos(
         });
     });
 
+    const ganancias: Ganancias = {};
+
     pedidos.forEach((porJugador, recurso) => {
         const disponible = banca.recursos.get(recurso);
         const total = [...porJugador.values()].reduce((suma, cantidad) => suma + cantidad, 0);
@@ -51,6 +57,9 @@ export function repartirRecursos(
             const jugador = jugadores.get(sessionId);
             jugador.recursos.set(recurso, jugador.recursos.get(recurso) + cantidad);
             banca.recursos.set(recurso, banca.recursos.get(recurso) - cantidad);
+            if(cantidad > 0) (ganancias[sessionId] ??= {})[recurso] = cantidad;
         });
     });
+
+    return ganancias;
 }

@@ -317,15 +317,10 @@ export class CatanRoom extends Room {
     //* Lanzamiento de dados
     const { dado1, dado2, suma } = lanzarDados();
 
-    //? Notificar a todos los jugadores el resultado de los dados
-    this.broadcast("dados", {
-      dado1,
-      dado2,
-      suma
-    })
-
     //! Si sale 7 toda la logica cambia, entramos a fase de robo y/o ladron
     if (suma === 7) {
+      //? Notificar a todos el resultado: con un 7 nadie gana recursos
+      this.broadcast("dados", { dado1, dado2, suma, ganancias: {} });
 
       //* Limpiar a los jugadors que deben descartar
       this.partida.jugadoresParaDescartar.clear();
@@ -364,13 +359,17 @@ export class CatanRoom extends Room {
     const hexagonosEncontrados = buscarHexagonos(this.tablero.hexagonos, suma);
 
     //* Dar los recursos de todos los hexagonos a la vez, para saber si la banca alcanza
-    repartirRecursos(
+    const ganancias = repartirRecursos(
       hexagonosEncontrados,
       this.tablero.vertices,
       this.jugadores,
       this.banca,
       this.tablero.ladron
     );
+
+    //? Notificar a todos el resultado y lo que gano cada uno, para animarlo
+    this.broadcast("dados", { dado1, dado2, suma, ganancias });
+
     this.partida.faseJuego = FaseJuego.ACCIONES;
 
     return exito();
