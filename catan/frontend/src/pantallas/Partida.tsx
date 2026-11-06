@@ -41,7 +41,8 @@ import ElegirRobo from '../componentes/ElegirRobo';
 import UsarCarta, { type CartaUsable } from '../componentes/UsarCarta';
 import ElegirAbundancia from '../componentes/ElegirAbundancia';
 import ElegirMonopolio from '../componentes/ElegirMonopolio';
-import FinPartida from '../componentes/FinPartida';
+import FinPartida, { type LugarFinal } from '../componentes/FinPartida';
+import { podio } from '../common/puntos';
 import ProponerIntercambio, { type Propuesta } from '../componentes/ProponerIntercambio';
 import ResponderIntercambio, { type Respuesta } from '../componentes/ResponderIntercambio';
 import ConfirmarPasarTurno from '../componentes/ConfirmarPasarTurno';
@@ -450,6 +451,14 @@ function Partida({ sala, onSolicitarConstruccion, onSalir }: Props) {
   const nombreGanador = partidaActual?.ganador
     ? (jugadores[partidaActual.ganador]?.nombre ?? 'Un jugador')
     : '';
+  // Podio y puntos de la pantalla final, con el color fijo de cada jugador.
+  const lugaresFinales: LugarFinal[] = partidaActual
+    ? podio(jugadores, datosTablero.vertices, partidaActual).map((lugar) => ({
+      ...lugar,
+      color: colorDeJugador(ordenJugadores, lugar.sessionId, jugadores),
+      esBot: jugadores[lugar.sessionId]?.esBot ?? false,
+    }))
+    : [];
 
   const enFaseCarreteras = Boolean(
     sala
@@ -881,7 +890,7 @@ function Partida({ sala, onSolicitarConstruccion, onSalir }: Props) {
         <FinPartida
           abierto={partidaFinalizada && !verTableroFinal}
           nombreGanador={nombreGanador}
-          colorGanador={colorDeJugador(ordenJugadores, partidaActual?.ganador ?? '', jugadores)}
+          lugares={lugaresFinales}
           soyElGanador={partidaActual?.ganador === miSessionId}
           ganadorEsBot={jugadores[partidaActual?.ganador ?? '']?.esBot ?? false}
           onSalir={() => onSalir?.()}
