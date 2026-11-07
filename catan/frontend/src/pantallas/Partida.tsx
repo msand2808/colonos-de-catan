@@ -22,6 +22,10 @@ import DescartarRecursos from '../componentes/descartarRecursos';
 import TirarDados from '../componentes/tirarDados';
 import RecursosGanados from '../componentes/recursosGanados';
 import {
+  CLAVE_SILENCIO, empiezaMiTurno, reproducir, silencioGuardado, sonidoDelLog, sonidosDeTirada,
+  type Sonido,
+} from '../common/sonidos';
+import {
   duracionVuelos, hexagonosQueProducen, medirVuelos, viajesDeRecursos,
   type ResultadoDados, type VueloRecurso,
 } from '../common/dados';
@@ -138,6 +142,25 @@ function Partida({ sala, onSolicitarConstruccion, onSalir }: Props) {
   // Todo lo que manda el servidor. null = todavia no llega, o no hay sala.
   const [estadoReal, setEstadoReal] = useState<EstadoCatan | null>(null);
   const [registro, setRegistro] = useState<LineaRegistro[]>([]);
+  // Silencio elegido por el jugador; se recuerda al recargar.
+  const [silencio, setSilencio] = useState(() => {
+    try { return silencioGuardado(localStorage.getItem(CLAVE_SILENCIO)); } catch { return false; }
+  });
+  // Los escuchadores de la sala se crean una vez: leen el silencio y el turno de aqui.
+  const silencioActual = useRef(silencio);
+  const turnoAnterior = useRef('');
+
+  // Toca los sonidos salvo que el jugador haya silenciado la partida.
+  function sonar(sonidos: Sonido[]) {
+    if (!silencioActual.current) reproducir(sonidos);
+  }
+
+  function cambiarSilencio() {
+    const nuevo = !silencio;
+    setSilencio(nuevo);
+    silencioActual.current = nuevo;
+    try { localStorage.setItem(CLAVE_SILENCIO, nuevo ? 'si' : 'no'); } catch { /* solo dura esta visita */ }
+  }
 
   useEffect(() => {
     if (!sala) return;
@@ -146,6 +169,10 @@ function Partida({ sala, onSolicitarConstruccion, onSalir }: Props) {
     function actualizarEstado() {
       const estado = leerEstado(salaActual);
       setEstadoReal(estado);
+      // Aviso cuando empieza mi turno
+      const turno = estado?.partida.turnoActual ?? '';
+      if (empiezaMiTurno(turnoAnterior.current, turno, salaActual.sessionId)) sonar(['turno']);
+      turnoAnterior.current = turno;
       // El intercambio no tiene confirmacion propia: se refleja en los recursos.
       const pendiente = intercambioPendiente.current;
       if (pendiente) {
@@ -288,6 +315,7 @@ function Partida({ sala, onSolicitarConstruccion, onSalir }: Props) {
     const dejarDeEscucharDados = sala.onMessage('dados', (resultado: ResultadoDados) => {
       setResultadoDados(resultado);
       setLanzandoDados(false);
+      sonar(sonidosDeTirada(resultado, sala.sessionId));
       // Con un 7 o sin ganancias no se anima nada; el log lo cuenta como siempre.
       const tablero = leerEstado(sala)?.tablero;
       if (tablero) {
@@ -332,8 +360,11 @@ function Partida({ sala, onSolicitarConstruccion, onSalir }: Props) {
 
     const dejarDeEscucharLog = sala.onMessage(
       'log',
-      ({ jugador, mensaje }: MensajeRegistro) =>
-        agregar({ tipo: 'log', jugador, mensaje }),
+      ({ jugador, mensaje }: MensajeRegistro) => {
+        agregar({ tipo: 'log', jugador, mensaje });
+        const sonido = sonidoDelLog(mensaje);
+        if (sonido) sonar([sonido]);
+      },
     );
 
     return () => {
@@ -675,8 +706,17 @@ function Partida({ sala, onSolicitarConstruccion, onSalir }: Props) {
 
   return (
     <div className="marcoPartida">
-        <div className="salir"> 
-          <button className="btn btn-danger w-100 h-100" onClick={onSalir}>Salir</button>
+        <div className="salir d-flex gap-1">
+          <button className="btn btn-danger flex-fill h-100" onClick={onSalir}>Salir</button>
+          <button
+            className="btn btn-secondary h-100"
+            onClick={cambiarSilencio}
+            aria-pressed={silencio}
+            aria-label={silencio ? 'Activar sonido' : 'Silenciar'}
+            title={silencio ? 'Activar sonido' : 'Silenciar'}
+          >
+            {silencio ? '🔇' : '🔊'}
+          </button>
         </div>
         <div className="tabCostos">
             <TablaCostes />
