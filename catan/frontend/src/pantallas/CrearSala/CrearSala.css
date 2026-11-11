@@ -1,3 +1,151 @@
-.crear-sala__contenido {
-  max-width: 480px;
+/* CREAR SALA: colores y fuentes vienen de tema.css; el marco, de Marco.css. */
+.crear {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+  padding: 28px 24px 24px;
+  /* "backwards": al terminar la entrada no se queda fijo el transform. */
+  animation-fill-mode: backwards;
+  animation-timing-function: var(--ease-salida);
+}
+
+.crear__cabecera {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+}
+
+.crear__medallon {
+  width: 56px;
+  background: var(--ladrillo);
+}
+
+.crear__medallon img {
+  display: block;
+  filter: brightness(0) invert(1);
+}
+
+.crear__titulo {
+  margin: 0;
+  font-size: clamp(1.5rem, 5vw, 1.9rem);
+  line-height: 1.15;
+}
+
+.crear__lead {
+  margin: 4px 0 0;
+  color: var(--tinta-suave);
+}
+
+/* ---------- Pública / privada ---------- */
+.crear__privacidad {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 10px;
+  min-width: 0;
+  margin: 0;
+  padding: 0;
+  border: 0;
+}
+
+.crear__privacidad legend {
+  padding: 0;
+}
+
+.crear__opcion {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 12px 14px;
+  background: var(--pergamino);
+  border: 2px solid var(--dorado-claro);
+  border-radius: var(--radio-md);
+  cursor: pointer;
+  transition:
+    border-color 0.15s var(--ease-salida),
+    background-color 0.15s var(--ease-salida),
+    transform 0.15s var(--ease-salida);
+}
+
+.crear__opcion:active {
+  transform: scale(0.98);
+}
+
+.crear__opcion--activa {
+  background: var(--pergamino-claro);
+  border-color: var(--teal);
+  box-shadow: 0 0 0 3px rgba(23, 105, 119, 0.18);
+}
+
+/* El radio real queda encima, invisible pero enfocable y clicable. */
+.crear__radio {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  margin: 0;
+  opacity: 0;
+  cursor: pointer;
+}
+
+.crear__opcion:has(.crear__radio:focus-visible) {
+  outline: 3px solid var(--trigo);
+  outline-offset: 3px;
+}
+
+.crear__opcion-cabecera {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+/* Círculo que se llena con un punto al elegir la opción. */
+.crear__marca {
+  width: 20px;
+  height: 20px;
+  flex-shrink: 0;
+  background: var(--pergamino-claro);
+  border: 2px solid var(--dorado);
+  border-radius: 50%;
+  transition:
+    border-color 0.15s var(--ease-salida),
+    background-color 0.15s var(--ease-salida);
+}
+
+.crear__opcion--activa .crear__marca {
+  border-color: var(--teal);
+  background: radial-gradient(circle, var(--teal) 0 45%, var(--pergamino-claro) 50%);
+}
+
+.crear__opcion-detalle {
+  font-size: 0.875rem;
+  color: var(--tinta-suave);
+}
+
+/* ---------- Código de acceso ---------- */
+.crear__codigo-bloque {
+  animation: tema-aparecer 0.2s var(--ease-salida) backwards;
+}
+
+.crear__codigo {
+  font-family: ui-monospace, "Cascadia Mono", Consolas, monospace;
+  font-size: 1.2rem;
+  letter-spacing: 0.25em;
+}
+
+.crear__codigo::placeholder {
+  font-family: var(--fuente-texto);
+  font-size: 1rem;
+  letter-spacing: normal;
+}
+
+@media (min-width: 480px) {
+  .crear__privacidad {
+    grid-template-columns: 1fr 1fr;
+  }
+
+  .crear__privacidad legend {
+    grid-column: 1 / -1;
+  }
 }
