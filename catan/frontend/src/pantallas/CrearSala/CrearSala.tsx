@@ -1,14 +1,6 @@
 import { useState, type FormEvent } from "react";
 import "./CrearSala.css";
-import Alert from "@mui/material/Alert";
-import Button from "@mui/material/Button";
-import Card from "@mui/material/Card";
-import CardContent from "@mui/material/CardContent";
-import Divider from "@mui/material/Divider";
-import Switch from "@mui/material/Switch";
-import TextField from "@mui/material/TextField";
-import type { Theme } from "@mui/material/styles";
-import Typography from "@mui/material/Typography";
+import Marco from "../../componentes/Marco/Marco";
 import {
   LARGO_MAXIMO_ALIAS,
   LARGO_MAXIMO_CODIGO,
@@ -24,6 +16,24 @@ export interface DatosNuevaSala {
   codigoAcceso?: string;
 }
 
+// Pública es la opción por defecto: las salas son públicas salvo que se pida lo contrario.
+const OPCIONES_PRIVACIDAD = [
+  {
+    id: "publica",
+    privada: false,
+    etiqueta: "Pública",
+    insignia: "tema-insignia--publica",
+    detalle: "Cualquiera puede verla en el listado y entrar.",
+  },
+  {
+    id: "privada",
+    privada: true,
+    etiqueta: "Privada",
+    insignia: "tema-insignia--privada",
+    detalle: "Aparece en el listado, pero solo entra quien tenga el código.",
+  },
+] as const;
+
 interface CrearSalaProps {
   nombreJugador: string;
   // Devuelve null si la sala se creó, o el mensaje de error a mostrar.
@@ -33,7 +43,6 @@ interface CrearSalaProps {
 
 function CrearSala({ nombreJugador, onCrear, onVolver }: CrearSalaProps) {
   const [alias, setAlias] = useState(() => aliasSugerido(nombreJugador));
-  // Apagado por defecto: las salas son públicas salvo que se pida lo contrario.
   const [privada, setPrivada] = useState(false);
   const [codigo, setCodigo] = useState("");
   const [intentoEnviar, setIntentoEnviar] = useState(false);
@@ -67,115 +76,112 @@ function CrearSala({ nombreJugador, onCrear, onVolver }: CrearSalaProps) {
   }
 
   return (
-    <div className="bg-info-subtle min-vh-100 px-3 py-4">
-      <div className="mx-auto d-flex flex-column align-items-start gap-3 crear-sala__contenido">
-        <Button variant="text" onClick={onVolver}>
-          ← Volver
-        </Button>
+    <Marco ancho="angosto" onVolver={onVolver}>
+      <form className="tema-pergamino tema-aparecer crear" onSubmit={crear} noValidate>
+        <header className="crear__cabecera">
+          <span className="tema-hex crear__medallon" aria-hidden="true">
+            <img src="/svg/ciudad.svg" alt="" width={28} height={28} />
+          </span>
+          <div>
+            <h1 className="crear__titulo">Funda tu sala</h1>
+            <p className="crear__lead">Ponle nombre y decide quién puede entrar.</p>
+          </div>
+        </header>
 
-        <Card variant="outlined" className="w-100">
-          <CardContent component="form" onSubmit={crear} noValidate className="p-4 d-flex flex-column gap-3">
-            <header>
-              <div className="d-flex align-items-center gap-3 mb-3">
-                <img src="/svg/ciudad.svg" alt="" aria-hidden="true" width={40} height={40} />
-                <div>
-                  <Typography variant="h5" component="h1">
-                    Funda tu sala
-                  </Typography>
-                  <p className="mb-0 text-body-secondary">Ponle nombre y decide quién puede entrar.</p>
-                </div>
-              </div>
-              <Divider />
-            </header>
+        <div>
+          <label className="tema-etiqueta" htmlFor="alias-sala">
+            Nombre de la sala
+          </label>
+          <input
+            id="alias-sala"
+            className={"tema-input" + (mostrarErrorAlias ? " tema-input--error" : "")}
+            type="text"
+            placeholder="Ej. Isla de los Amigos"
+            autoFocus
+            value={alias}
+            maxLength={LARGO_MAXIMO_ALIAS}
+            onChange={(e) => setAlias(e.target.value)}
+            aria-invalid={Boolean(mostrarErrorAlias)}
+            aria-describedby="alias-ayuda"
+          />
+          <div className="tema-ayuda" id="alias-ayuda">
+            <span className={mostrarErrorAlias ? "tema-error" : undefined}>
+              {mostrarErrorAlias ? errorAlias : "De 4 a 20 letras, números o espacios."}
+            </span>
+            <span>
+              {alias.trim().length}/{LARGO_MAXIMO_ALIAS}
+            </span>
+          </div>
+        </div>
 
-            <TextField
-              id="alias-sala"
-              label="Nombre de la sala"
-              placeholder="Ej. Isla de los Amigos"
-              fullWidth
-              autoFocus
-              value={alias}
-              onChange={(e) => setAlias(e.target.value)}
-              error={Boolean(mostrarErrorAlias)}
-              helperText={
-                <span className="d-flex justify-content-between gap-2">
-                  <span>{mostrarErrorAlias ? errorAlias : "De 4 a 20 letras, números o espacios."}</span>
-                  <span>
-                    {alias.trim().length}/{LARGO_MAXIMO_ALIAS}
-                  </span>
-                </span>
-              }
-              slotProps={{ htmlInput: { maxLength: LARGO_MAXIMO_ALIAS } }}
-            />
-
-            <div
-              className={
-                "d-flex align-items-center justify-content-between gap-3 p-3 border rounded " +
-                (privada ? "bg-danger-subtle border-danger-subtle" : "bg-success-subtle border-success-subtle")
-              }
+        {/* Dos opciones en lugar del interruptor. Son radios de verdad (ocultos
+            a la vista) para que el teclado y los lectores de pantalla funcionen. */}
+        <fieldset className="crear__privacidad">
+          <legend className="tema-etiqueta">Quién puede entrar</legend>
+          {OPCIONES_PRIVACIDAD.map((opcion) => (
+            <label
+              key={opcion.id}
+              className={"crear__opcion" + (privada === opcion.privada ? " crear__opcion--activa" : "")}
             >
-              <div className="d-flex flex-column">
-                <span className="fw-semibold" id="privacidad-titulo">
-                  {privada ? "🔒 Sala privada" : "🌍 Sala pública"}
-                </span>
-                <small className="text-body-secondary">
-                  {privada
-                    ? "Aparece en el listado, pero solo entra quien tenga el código."
-                    : "Cualquiera puede verla en el listado y entrar."}
-                </small>
-              </div>
-              <Switch
-                checked={privada}
-                onChange={(e) => setPrivada(e.target.checked)}
-                color="error"
-                slotProps={{ input: { "aria-labelledby": "privacidad-titulo" } }}
+              <input
+                type="radio"
+                name="privacidad"
+                className="crear__radio"
+                checked={privada === opcion.privada}
+                onChange={() => setPrivada(opcion.privada)}
               />
+              <span className="crear__opcion-cabecera">
+                <span className={`tema-insignia ${opcion.insignia}`}>{opcion.etiqueta}</span>
+                <span className="crear__marca" aria-hidden="true" />
+              </span>
+              <span className="crear__opcion-detalle">{opcion.detalle}</span>
+            </label>
+          ))}
+        </fieldset>
+
+        {privada && (
+          <div className="crear__codigo-bloque">
+            <label className="tema-etiqueta" htmlFor="codigo-sala">
+              Código de acceso
+            </label>
+            <input
+              id="codigo-sala"
+              // Letra monoespaciada para leer bien el código. Sin text-transform:
+              // el backend compara el código tal cual se escribió.
+              className={"tema-input crear__codigo" + (mostrarErrorCodigo ? " tema-input--error" : "")}
+              type="text"
+              placeholder="Ej. OVEJA7"
+              autoComplete="off"
+              spellCheck={false}
+              value={codigo}
+              maxLength={LARGO_MAXIMO_CODIGO}
+              // Los espacios no se admiten: se quitan mientras se escribe.
+              onChange={(e) => setCodigo(e.target.value.replace(/\s/g, ""))}
+              aria-invalid={Boolean(mostrarErrorCodigo)}
+              aria-describedby="codigo-ayuda"
+            />
+            <div className="tema-ayuda" id="codigo-ayuda">
+              <span className={mostrarErrorCodigo ? "tema-error" : undefined}>
+                {mostrarErrorCodigo ? errorCodigo : "De 4 a 8 letras o números. Distingue mayúsculas."}
+              </span>
+              <span>
+                {codigo.length}/{LARGO_MAXIMO_CODIGO}
+              </span>
             </div>
+          </div>
+        )}
 
-            {privada && (
-              <TextField
-                id="codigo-sala"
-                label="Código de acceso"
-                placeholder="Ej. OVEJA7"
-                fullWidth
-                autoComplete="off"
-                value={codigo}
-                // Los espacios no se admiten: se quitan mientras se escribe.
-                onChange={(e) => setCodigo(e.target.value.replace(/\s/g, ""))}
-                error={Boolean(mostrarErrorCodigo)}
-                helperText={
-                  <span className="d-flex justify-content-between gap-2">
-                    <span>{mostrarErrorCodigo ? errorCodigo : "De 4 a 8 letras o números. Distingue mayúsculas."}</span>
-                    <span>
-                      {codigo.length}/{LARGO_MAXIMO_CODIGO}
-                    </span>
-                  </span>
-                }
-                slotProps={{ htmlInput: { maxLength: LARGO_MAXIMO_CODIGO, spellCheck: false } }}
-                // Letra monoespaciada para leer bien el código. Sin text-transform:
-                // el backend compara el código tal cual se escribió.
-                sx={{
-                  "& .MuiInputBase-input": { fontFamily: "monospace", fontSize: "1.2rem", letterSpacing: "0.25em" },
-                  "& .MuiInputBase-input::placeholder": {
-                    fontFamily: (theme: Theme) => theme.typography.fontFamily,
-                    fontSize: "1rem",
-                    letterSpacing: "normal",
-                  },
-                }}
-              />
-            )}
+        {errorServidor && (
+          <p className="tema-aviso" role="alert">
+            {errorServidor}
+          </p>
+        )}
 
-            {errorServidor && (
-              <Alert severity="error">{errorServidor}</Alert>
-            )}
-
-            <Button type="submit" variant="contained" color="error" fullWidth size="large" disabled={creando}>
-              {creando ? "Creando sala…" : "🏗️ Crear sala"}
-            </Button>
-          </CardContent>
-        </Card>
-      </div>
-    </div>
+        <button type="submit" className="tema-btn tema-btn--ladrillo tema-btn--ancho" disabled={creando}>
+          {creando ? "Creando sala…" : "Crear sala"}
+        </button>
+      </form>
+    </Marco>
   );
 }
 
