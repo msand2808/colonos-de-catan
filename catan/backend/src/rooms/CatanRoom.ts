@@ -35,7 +35,7 @@ import { elegirJugadaCarta } from "../functions/elegirCartaBot.js";
 const SEGUNDOS_RECONEXION = 30;
 
 //* Un color por cada lugar de la sala, en el orden en que se reparten
-const COLORES = ["#D34F3E", "#3E7FD3", "#4CA36B", "#E0A030"];
+export const COLORES = ["#D34F3E", "#3E7FD3", "#4CA36B", "#E0A030"];
 
 export class CatanRoom extends Room {
   maxClients = 4;

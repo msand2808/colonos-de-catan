@@ -1,7 +1,7 @@
 import assert from "node:assert";
 import { ColyseusTestServer } from "@colyseus/testing";
 import { servidorDePrueba } from "./servidorDePrueba.js";
-import { CatanRoom } from "../src/rooms/CatanRoom.js";
+import { CatanRoom, COLORES } from "../src/rooms/CatanRoom.js";
 import { FasePartida } from "../src/common/enums.js";
 
 describe("elegir el color en la sala de espera", () => {
@@ -10,7 +10,8 @@ describe("elegir el color en la sala de espera", () => {
     before(async () => colyseus = await servidorDePrueba());
     beforeEach(async () => colyseus.cleanup());
 
-    const VERDE = "#4CA36B";
+    //* Ana y Beto toman los dos primeros colores al entrar, el tercero queda libre
+    const COLOR_LIBRE = COLORES[2];
 
     //* Sala en lobby con Ana y Beto, cada uno con el color que le toco al entrar
     async function prepararSala() {
@@ -30,9 +31,9 @@ describe("elegir el color en la sala de espera", () => {
     it("cambia al color libre que elige el jugador", async () => {
         const { room, ana, colorDe } = await prepararSala();
 
-        await elegir(room, ana, { color: VERDE });
+        await elegir(room, ana, { color: COLOR_LIBRE });
 
-        assert.strictEqual(colorDe(ana), VERDE);
+        assert.strictEqual(colorDe(ana), COLOR_LIBRE);
     });
 
     it("rechaza el color que ya tiene otro jugador", async () => {
@@ -74,7 +75,7 @@ describe("elegir el color en la sala de espera", () => {
         const colorAntes = colorDe(ana);
         room.state.partida.fase = FasePartida.JUEGO;
 
-        ana.send("msgElegirColor", { color: VERDE });
+        ana.send("msgElegirColor", { color: COLOR_LIBRE });
         const error = await ana.waitForMessage("error", 1000);
 
         assert.strictEqual(error.mensajeError, "Solo puedes elegir color en la sala de espera");
