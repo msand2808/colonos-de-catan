@@ -42,6 +42,9 @@
   --radio-sm: 8px;
   --radio-md: 12px;
   --radio-lg: 18px;
+
+  /* Curva de salida fuerte para transiciones de interfaz */
+  --ease-salida: cubic-bezier(0.23, 1, 0.32, 1);
 }
 
 /* Modo oscuro: App.tsx pone data-theme="oscuro" en <html> */

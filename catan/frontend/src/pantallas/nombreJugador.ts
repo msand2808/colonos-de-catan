@@ -34,3 +34,10 @@ export function validarNombreJugador(nombre: string): string | null {
 
   return null;
 }
+
+// Iniciales para el hexágono de la vista previa: las dos primeras letras del
+// nombre ya recortado, o "?" si todavía no escribió nada.
+export function inicialesNombre(nombre: string): string {
+  const limpio = nombre.trim();
+  return limpio ? limpio.slice(0, 2).toUpperCase() : "?";
+}

@@ -2,13 +2,13 @@ import { useEffect, useRef, useState } from "react";
 import type { Room } from "@colyseus/sdk";
 import "./SalaEspera.css";
 import Alert from "@mui/material/Alert";
-import Avatar from "@mui/material/Avatar";
 import Button from "@mui/material/Button";
 import Card from "@mui/material/Card";
 import CardContent from "@mui/material/CardContent";
 import Chip from "@mui/material/Chip";
 import IconButton from "@mui/material/IconButton";
 import Typography from "@mui/material/Typography";
+import Marco from "../../componentes/Marco/Marco";
 import { COLORES, coloresParaElegir } from "../../common/jugador";
 import type { InfoSala } from "../sesionGuardada";
 
@@ -86,8 +86,8 @@ function SalaEspera({
   const asientos = Array.from({ length: maxJugadores }, (_, i) => jugadores[i] ?? null);
 
   return (
-    <div className="bg-info-subtle min-vh-100 d-flex align-items-center justify-content-center px-3 py-4">
-      <Card variant="outlined" className="w-100 sala-espera__card">
+    <Marco>
+      <Card variant="outlined" className="w-100 mx-auto sala-espera__card">
         <CardContent className="d-flex flex-column align-items-center text-center p-4">
           <div className="d-flex flex-wrap justify-content-center gap-2 mb-3">
             <Chip label="⏳ Sala de espera" color="primary" variant="outlined" size="small" />
@@ -108,16 +108,6 @@ function SalaEspera({
             <strong>{jugadores.length}</strong> de {maxJugadores} colonos en la isla
           </p>
 
-          <div className="d-flex gap-2 w-100 mb-4" aria-hidden="true">
-            {asientos.map((jugador, i) => (
-              <div key={i} className="progress flex-fill">
-                {jugador && (
-                  <div className="progress-bar w-100" style={{ backgroundColor: colorDeAsiento(jugador, i) }} />
-                )}
-              </div>
-            ))}
-          </div>
-
           <div className="w-100 mb-4">
             <ul className="row g-3 list-unstyled mb-0">
               {asientos.map((jugador, i) =>
@@ -135,9 +125,10 @@ function SalaEspera({
                             ✕
                           </IconButton>
                         )}
-                        <Avatar sx={{ bgcolor: colorDeAsiento(jugador, i), width: 52, height: 52 }}>
+                        {/* Hexágono como una ficha del tablero (tema-hex de tema.css). */}
+                        <span className="tema-hex" style={{ background: colorDeAsiento(jugador, i) }}>
                           {jugador.esBot ? "🤖" : iniciales(jugador.nombre || jugador.sessionId)}
-                        </Avatar>
+                        </span>
                         <span className="fw-bold small text-truncate mw-100" title={jugador.nombre}>
                           {jugador.nombre}
                         </span>
@@ -150,7 +141,7 @@ function SalaEspera({
                   <li key={`vacio-${i}`} className="col-6 col-sm-3">
                     <Card variant="outlined" className="h-100" sx={{ borderStyle: "dashed" }}>
                       <CardContent className="d-flex flex-column align-items-center gap-2 p-3">
-                        <Avatar sx={{ width: 52, height: 52 }}>?</Avatar>
+                        <span className="tema-hex" style={{ background: "var(--pergamino-oscuro)" }}>?</span>
                         <span className="small text-body-secondary">Esperando…</span>
                       </CardContent>
                     </Card>
@@ -270,7 +261,7 @@ function SalaEspera({
           </Button>
         </CardContent>
       </Card>
-    </div>
+    </Marco>
   );
 }
 

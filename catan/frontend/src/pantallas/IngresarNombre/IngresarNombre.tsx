@@ -1,12 +1,8 @@
 import { useState, type FormEvent } from "react";
 import "./IngresarNombre.css";
-import Button from "@mui/material/Button";
-import Card from "@mui/material/Card";
-import CardContent from "@mui/material/CardContent";
-import Chip from "@mui/material/Chip";
-import TextField from "@mui/material/TextField";
-import Typography from "@mui/material/Typography";
-import { LARGO_MAXIMO_NOMBRE, validarNombreJugador } from "../nombreJugador";
+import Marco from "../../componentes/Marco/Marco";
+import { COLORES } from "../../common/jugador";
+import { LARGO_MAXIMO_NOMBRE, inicialesNombre, validarNombreJugador } from "../nombreJugador";
 
 interface IngresarNombreProps {
   nombreInicial?: string;
@@ -20,63 +16,62 @@ function IngresarNombre({ nombreInicial = "", onConfirmar, onVolver }: IngresarN
 
   const error = validarNombreJugador(nombre);
   const mostrarError = intentoEnviar && error;
+  const limpio = nombre.trim();
 
   function confirmar(e: FormEvent) {
     e.preventDefault();
     setIntentoEnviar(true);
-    if (!error) onConfirmar(nombre.trim());
+    if (!error) onConfirmar(limpio);
   }
 
   return (
-    <div className="bg-info-subtle min-vh-100 d-flex align-items-center justify-content-center px-3 py-4">
-      <div className="w-100 d-flex flex-column align-items-start gap-3 ingresar-nombre__contenido">
-        {onVolver && (
-          <Button variant="text" onClick={onVolver}>
-            ← Volver
-          </Button>
-        )}
+    <Marco ancho="angosto" onVolver={onVolver}>
+      <form className="tema-pergamino tema-aparecer nombre" onSubmit={confirmar} noValidate>
+        {/* Vista previa en vivo: así te verán los demás en la sala. */}
+        <div className="nombre__ficha" aria-hidden="true">
+          <span className="tema-hex nombre__hex" style={{ background: COLORES[0] }}>
+            {inicialesNombre(nombre)}
+          </span>
+          <span className={"nombre__nombre" + (limpio ? "" : " nombre__nombre--vacio")}>
+            {limpio || "Tu nombre"}
+          </span>
+        </div>
 
-        <Card variant="outlined" className="w-100">
-          <CardContent component="form" onSubmit={confirmar} className="p-4">
-            <div className="d-flex align-items-center justify-content-between mb-3">
-              <Chip label="Colonos de Catán" color="primary" variant="outlined" size="small" />
-              <img src="/svg/poblado.svg" alt="" aria-hidden="true" width={32} height={32} />
-            </div>
+        <h1 className="nombre__titulo">¿Cómo te llamas, colono?</h1>
+        <p className="nombre__lead">Los demás jugadores verán este nombre en el lobby y durante la partida.</p>
 
-            <Typography variant="h5" component="h1" gutterBottom>
-              ¿Cómo te llamas, colono?
-            </Typography>
-            <p className="text-body-secondary mb-4">
-              Este nombre lo verán los demás jugadores en el lobby y durante la partida.
-            </p>
+        <div>
+          <label className="tema-etiqueta" htmlFor="nombre-jugador">
+            Tu nombre de jugador
+          </label>
+          <input
+            id="nombre-jugador"
+            className={"tema-input" + (mostrarError ? " tema-input--error" : "")}
+            type="text"
+            placeholder="Ej. Colono Valiente"
+            autoFocus
+            autoComplete="off"
+            value={nombre}
+            maxLength={LARGO_MAXIMO_NOMBRE}
+            onChange={(e) => setNombre(e.target.value)}
+            aria-invalid={Boolean(mostrarError)}
+            aria-describedby="nombre-ayuda"
+          />
+          <div className="tema-ayuda" id="nombre-ayuda">
+            <span className="tema-error" role={mostrarError ? "alert" : undefined}>
+              {mostrarError ? error : ""}
+            </span>
+            <span>
+              {limpio.length}/{LARGO_MAXIMO_NOMBRE}
+            </span>
+          </div>
+        </div>
 
-            <TextField
-              id="nombre-jugador"
-              label="Tu nombre de jugador"
-              placeholder="Ej. Colono Valiente"
-              fullWidth
-              autoFocus
-              value={nombre}
-              onChange={(e) => setNombre(e.target.value)}
-              error={Boolean(mostrarError)}
-              helperText={
-                <span className="d-flex justify-content-between">
-                  <span>{mostrarError ? error : ""}</span>
-                  <span>
-                    {nombre.trim().length}/{LARGO_MAXIMO_NOMBRE}
-                  </span>
-                </span>
-              }
-              slotProps={{ htmlInput: { maxLength: LARGO_MAXIMO_NOMBRE } }}
-            />
-
-            <Button type="submit" variant="contained" fullWidth size="large" className="mt-3" disabled={!nombre.trim()}>
-              Continuar →
-            </Button>
-          </CardContent>
-        </Card>
-      </div>
-    </div>
+        <button type="submit" className="tema-btn tema-btn--ancho" disabled={!limpio}>
+          Continuar
+        </button>
+      </form>
+    </Marco>
   );
 }
 

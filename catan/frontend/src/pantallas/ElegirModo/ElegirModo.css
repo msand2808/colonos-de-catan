@@ -1,3 +1,140 @@
-.elegir__contenido {
+/* ELEGIR MODO: colores y fuentes vienen de tema.css; el marco, de Marco.css. */
+.elegir {
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
   max-width: 720px;
+  margin: 0 auto;
+}
+
+.elegir__saludo {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 4px 12px;
+  margin: 0 0 4px;
+  font-size: 1.1rem;
+}
+
+.elegir__cambiar {
+  padding: 2px 4px;
+  font: inherit;
+  font-size: 0.9rem;
+  font-weight: 600;
+  color: var(--teal);
+  background: none;
+  border: 0;
+  border-radius: 4px;
+  text-decoration: underline;
+  text-underline-offset: 3px;
+  cursor: pointer;
+}
+
+.elegir__cambiar:focus-visible {
+  outline: 3px solid var(--trigo);
+  outline-offset: 2px;
+}
+
+.elegir__titulo {
+  margin: 0 0 8px;
+  font-size: clamp(1.75rem, 6vw, 2.5rem);
+  line-height: 1.1;
+  text-wrap: balance;
+}
+
+.elegir__lead {
+  margin: 0;
+  max-width: 48ch;
+  color: var(--tinta-suave);
+}
+
+/* ---------- Fichas ---------- */
+.elegir__fichas {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 16px;
+}
+
+.elegir__ficha {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 8px;
+  width: 100%;
+  padding: 24px;
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+  /* "backwards" (y no "both"): al terminar la entrada el hover y :active
+     vuelven a mandar sobre transform. Sin rebote. */
+  animation-fill-mode: backwards;
+  animation-timing-function: var(--ease-salida);
+  transition:
+    transform 0.2s var(--ease-salida),
+    box-shadow 0.2s var(--ease-salida);
+}
+
+.elegir__ficha:focus-visible {
+  outline: 3px solid var(--trigo);
+  outline-offset: 4px;
+}
+
+.elegir__ficha:active {
+  transform: scale(0.98);
+}
+
+.elegir__medallon {
+  width: 76px;
+  margin-bottom: 8px;
+  transition: transform 0.2s var(--ease-salida);
+}
+
+.elegir__medallon img {
+  display: block;
+  /* El icono es oscuro: se vuelve claro sobre el color del medallón. */
+  filter: brightness(0) invert(1);
+}
+
+.elegir__ficha--crear .elegir__medallon {
+  background: var(--ladrillo);
+}
+
+.elegir__ficha--unirse .elegir__medallon {
+  background: var(--teal);
+}
+
+.elegir__ficha-titulo {
+  font-family: var(--fuente-titulo);
+  font-size: 1.35rem;
+  font-weight: 600;
+  color: var(--tinta);
+}
+
+.elegir__ficha-detalle {
+  color: var(--tinta-suave);
+  font-size: 0.95rem;
+}
+
+/* Efecto solo con ratón: en pantallas táctiles el hover se queda pegado. */
+@media (hover: hover) and (pointer: fine) {
+  .elegir__ficha:hover {
+    transform: translateY(-4px);
+    box-shadow:
+      0 2px 0 var(--dorado-claro),
+      0 20px 34px -14px rgba(27, 42, 49, 0.5);
+  }
+
+  .elegir__ficha:hover:active {
+    transform: translateY(-4px) scale(0.98);
+  }
+
+  .elegir__ficha:hover .elegir__medallon {
+    transform: rotate(-6deg) scale(1.06);
+  }
+}
+
+@media (min-width: 640px) {
+  .elegir__fichas {
+    grid-template-columns: 1fr 1fr;
+  }
 }

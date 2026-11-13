@@ -1,3 +1,57 @@
-.ingresar-nombre__contenido {
-  max-width: 440px;
+/* INGRESAR NOMBRE: colores y fuentes vienen de tema.css; el marco, de Marco.css. */
+.nombre {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  padding: 28px 24px 24px;
+  /* "backwards": al terminar la entrada no se queda fijo el transform. */
+  animation-fill-mode: backwards;
+  animation-timing-function: var(--ease-salida);
+}
+
+.nombre__ficha {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+  padding: 16px 12px;
+  background: var(--pergamino-claro);
+  border: 2px dashed var(--dorado-claro);
+  border-radius: var(--radio-md);
+}
+
+.nombre__hex {
+  width: 72px;
+  font-size: 1.4rem;
+  transition: background-color 0.2s var(--ease-salida);
+}
+
+.nombre__nombre {
+  max-width: 100%;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-family: var(--fuente-titulo);
+  font-size: 1.2rem;
+  font-weight: 600;
+  color: var(--tinta);
+}
+
+.nombre__nombre--vacio {
+  font-weight: 500;
+  color: var(--tinta-suave);
+}
+
+.nombre__titulo {
+  margin: 4px 0 0;
+  font-size: clamp(1.5rem, 5vw, 1.9rem);
+  line-height: 1.15;
+  text-align: center;
+  text-wrap: balance;
+}
+
+.nombre__lead {
+  margin: -8px 0 4px;
+  text-align: center;
+  color: var(--tinta-suave);
 }
