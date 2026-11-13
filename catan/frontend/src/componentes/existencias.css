@@ -1,0 +1,4 @@
+/* Los iconos de las piezas son negros: en modo oscuro se aclaran para que se vean. */
+:root[data-theme="oscuro"] .exIconoPieza {
+  filter: invert(1);
+}
