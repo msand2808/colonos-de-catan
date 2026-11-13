@@ -92,7 +92,7 @@ export type Jugadores = Record<string, Jugador>;
 // Color: lo manda el backend al entrar a la sala. Si no llega (datos de prueba),
 // se usa la posicion en el orden de turnos.
 
-export const COLORES = ['#D34F3E', '#3E7FD3', '#4CA36B', '#E0A030'];
+export const COLORES = ['#C0392B', '#2F6DB5', '#2E7D4F', '#9A6200'];
 
 export function colorDeJugador(
   ordenJugadores: string[],
