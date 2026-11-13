@@ -5,8 +5,7 @@ interface HomeProps {
   onAbrirMenu: () => void;
 }
 
-// Isla de 10 hexágonos (filas de 3, 4 y 3). Los colores y los iconos son los
-// mismos que usa el tablero; 6 y 8 van en rojo como en el juego.
+// Isla de 10 hexagonos (filas de 3, 4 y 3) con los colores del tablero
 interface Hexagono {
   color: string;
   icono: string | null;

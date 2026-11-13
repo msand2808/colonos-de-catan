@@ -7,7 +7,6 @@ import Typography from '@mui/material/Typography';
 import { RECURSOS, type Recurso, type Recursos } from '../common/jugador';
 import { avisoDescarte } from '../common/descarte';
 
-// Se reutilizan los iconos de recursos existentes; el tablero SVG no cambia.
 const ICONOS: Record<Recurso, string> = {
   madera: '/svg/madera.svg',
   trigo: '/svg/trigo.svg',

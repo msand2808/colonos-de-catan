@@ -7,11 +7,7 @@ import "./tablero.css"
 // Lado del hexagono.
 const S = 60;
 
-/* Las dos figuras salen de public/svg/poblado.svg y public/svg/ciudad.svg.
-   Van copiadas aqui, y no importadas, porque Vite no permite importar nada
-   de public/, y porque asi se pueden pintar del color del jugador. El viewBox
-   de esos archivos es de 24x24, de ahi la escala. Si cambia el dibujo en el
-   svg, hay que volver a copiar el path. */
+// Los paths salen de public/svg/poblado.svg y ciudad.svg; si cambian los svg hay que copiarlos de nuevo
 function PiezaVertice(
   { tipo, x, y, lado, color }:
   { tipo: number; x: number; y: number; lado: number; color: string },
@@ -22,7 +18,7 @@ function PiezaVertice(
       transform={`translate(${x - lado / 2} ${y - lado / 2}) scale(${lado / 24})`}
       pointerEvents="none"
     >
-      {/* Grupo aparte para el rebote: el de arriba ya usa transform para ubicarse */}
+      {/* Grupo aparte: el de arriba ya usa transform */}
       <g className="tbAparece">
       {tipo === 2 ? (
         <>
@@ -121,7 +117,7 @@ function Tablero({
       viewBox={`${-5.7 * S} ${-5.5 * S} ${11.4 * S} ${11 * S}`}
     >
 
-      {/* puertos primero, para que el muelle quede por detras del hexagono */}
+      {/* puertos primero, detras del hexagono */}
       {Object.entries(datos.puertos).map(([clave, puerto]) => {
         const a = puntoDeClave(puerto.vertice1);
         const b = puntoDeClave(puerto.vertice2);
@@ -142,7 +138,6 @@ function Tablero({
         );
       })}
 
-      {/* hexagonos */}
       {Object.entries(datos.hexagonos).map(([clave, hex]) => (
         <polygon
           key={clave}
@@ -166,7 +161,6 @@ function Tablero({
         );
       })}
 
-      {/* aristas: los caminos */}
       {Object.entries(datos.aristas).map(([clave, arista]) => {
         if (arista.propietario === '') return null;
         const [a, b] = segmentoArista(arista.h, arista.d, arista.p);
@@ -210,7 +204,6 @@ function Tablero({
         );
       })}
 
-      {/* fichas de numero y ladron */}
       {Object.entries(datos.hexagonos).map(([clave, hex]) => {
         const [cx, cy] = centro(hex.h, hex.d);
         const rojo = hex.numero === 6 || hex.numero === 8;
@@ -237,9 +230,7 @@ function Tablero({
         );
       })()}
 
-      {/* Mover al ladron: un circulo en el centro de cada hexagono para elegirlo.
-          No se dibuja donde esta el ladron ahora (esLadron), porque el
-          backend no deja dejarlo en el mismo hexagono. */}
+      {/* Mover al ladron: un circulo en cada hexagono para elegirlo */}
       {moviendoLadron && Object.entries(datos.hexagonos).map(([clave, hex]) => {
         if (hex.esLadron) return null;
         const [cx, cy] = centro(hex.h, hex.d);
@@ -272,7 +263,6 @@ function Tablero({
             && vertice.propietario === miSessionId);
         const seleccionado = puedeSeleccionar && esElObjetivo(objetivoSeleccionado, vertice.h, vertice.d, vertice.p);
         const objetivo = { h: vertice.h, d: vertice.d, p: vertice.p };
-        // El circulo sigue siendo el area de clic; la pieza se dibuja encima.
         const lado = S * 0.4;
         return (
           <g key={clave}>

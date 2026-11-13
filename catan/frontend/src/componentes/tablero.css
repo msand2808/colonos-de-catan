@@ -12,7 +12,7 @@
     stroke-width: 3;
 }
 
-/* Colores por terreno (ajusta los números según tu tipo de terreno) */
+/* Colores por terreno */
 .tbTerreno-0 { fill: #e8c97a; } /* desierto */
 .tbTerreno-1 { fill: #6ab04c; } /* bosque / madera */
 .tbTerreno-2 { fill: #f6e58d; } /* campo / trigo */
@@ -86,8 +86,7 @@
   stroke-width: 1;
 }
 
-/* Circulo para elegir a que hexagono mover al ladron. Es semitransparente
-   para que se siga viendo el numero de la ficha. */
+/* Circulo para elegir el hexagono del ladron, semitransparente para ver la ficha */
 .tbObjetivoLadron {
   cursor: pointer;
   fill: #ffffff55;
@@ -103,8 +102,7 @@
   outline: none;
 }
 
-/* Modo oscuro: solo el mar se vuelve de noche. Los terrenos, las fichas y
-   los puertos se quedan claros para que la isla se siga leyendo igual. */
+/* Modo oscuro: solo el mar se oscurece */
 :root[data-theme="oscuro"] .tablero { background: #1f4a5e; }
 :root[data-theme="oscuro"] .tbMuelle { stroke: #cbb083; }
 :root[data-theme="oscuro"] .tbObjetivoConstruccion { stroke: #7fd0dc; }
@@ -126,7 +124,7 @@
     .tbHexProduce { animation: none; opacity: 0.45; }
 }
 
-/* Animaciones de la #47 */
+/* Animaciones */
 
 /* Poblados, ciudades y caminos aparecen creciendo desde su centro */
 .tbAparece {

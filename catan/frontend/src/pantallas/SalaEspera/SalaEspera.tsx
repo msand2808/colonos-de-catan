@@ -17,7 +17,7 @@ export interface JugadorVista {
   nombre: string;
   score: number;
   esBot: boolean;
-  // El mismo color que va a tener en el tablero, lo asigna el servidor.
+  // Color asignado por el servidor, el mismo del tablero
   color: string;
   esUsuarioActual: boolean;
   esSuTurno: boolean;
@@ -25,8 +25,7 @@ export interface JugadorVista {
 
 interface SalaEsperaProps {
   room: Room;
-  // Alias, privacidad y código: el cliente no los recibe en el estado, así
-  // que Navegacion los guarda al crear o entrar. Puede ser null si faltan.
+  // Alias, privacidad y codigo no vienen en el estado: los guarda Navegacion (puede ser null)
   infoSala: InfoSala | null;
   jugadores: JugadorVista[];
   maxJugadores: number;
@@ -79,13 +78,11 @@ function SalaEspera({
       if (temporizador.current) clearTimeout(temporizador.current);
       temporizador.current = setTimeout(() => setCopiado(null), 2000);
     } catch {
-      // Si el navegador bloquea el portapapeles, el texto sigue visible
-      // y se puede copiar a mano.
+      // Si falla el portapapeles el texto sigue visible
     }
   }
 
-  // Un "asiento" por cada cupo de la sala: si hay jugador lo mostramos,
-  // si no, un asiento vacío que indica que todavía se espera a alguien.
+  // Un asiento por cupo; vacio si falta alguien
   const asientos = Array.from({ length: maxJugadores }, (_, i) => jugadores[i] ?? null);
 
   return (
@@ -111,8 +108,6 @@ function SalaEspera({
             <strong>{jugadores.length}</strong> de {maxJugadores} colonos en la isla
           </p>
 
-          {/* Barra de progreso de Bootstrap partida en un tramo por asiento.
-              Los tramos ocupados se pintan con el color del jugador. */}
           <div className="d-flex gap-2 w-100 mb-4" aria-hidden="true">
             {asientos.map((jugador, i) => (
               <div key={i} className="progress flex-fill">
@@ -130,7 +125,6 @@ function SalaEspera({
                   <li key={jugador.sessionId} className="col-6 col-sm-3">
                     <Card variant="outlined" className="h-100 position-relative">
                       <CardContent className="d-flex flex-column align-items-center gap-2 p-3">
-                        {/* Solo el anfitrión puede quitar bots, nunca a un humano. */}
                         {esCreador && jugador.esBot && (
                           <IconButton
                             size="small"
@@ -154,7 +148,6 @@ function SalaEspera({
                   </li>
                 ) : (
                   <li key={`vacio-${i}`} className="col-6 col-sm-3">
-                    {/* Asiento libre: borde punteado y un "?" en lugar de las iniciales. */}
                     <Card variant="outlined" className="h-100" sx={{ borderStyle: "dashed" }}>
                       <CardContent className="d-flex flex-column align-items-center gap-2 p-3">
                         <Avatar sx={{ width: 52, height: 52 }}>?</Avatar>
@@ -167,7 +160,6 @@ function SalaEspera({
             </ul>
           </div>
 
-          {/* Selector de color: el servidor rechaza los que ya tiene otro jugador. */}
           {miSessionId && (
             <div className="w-100 mb-4">
               <Typography variant="overline" component="div" color="text.secondary">
@@ -218,7 +210,6 @@ function SalaEspera({
               </Button>
             </div>
 
-            {/* El código solo lo conoce quien lo escribió (creador o quien entró con él). */}
             {infoSala?.privada && infoSala.codigoAcceso && (
               <div className="d-flex flex-column flex-sm-row align-items-sm-center gap-2 p-3 border border-danger-subtle rounded text-start bg-danger-subtle">
                 <div className="flex-grow-1 text-break">

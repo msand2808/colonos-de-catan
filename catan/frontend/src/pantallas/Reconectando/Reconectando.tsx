@@ -1,9 +1,7 @@
 import "./Reconectando.css";
 import Decoracion from "../Decoracion/Decoracion";
 
-// Se muestra al cargar la página mientras se intenta volver a la sala
-// con el token guardado. Dura como mucho lo que tarde el servidor en
-// aceptar o rechazar la reconexión.
+// Se muestra mientras se intenta volver a la sala con el token guardado
 function Reconectando() {
   return (
     <div className="reconectando tema-fondo">

@@ -5,9 +5,7 @@ export interface Banca {
   // Lo que le queda a la banca de cada recurso. Empieza en 19 de cada uno.
   recursos: Recursos;
 
-  /* El mazo de cartas de desarrollo que queda por comprar. Es un arreglo, no
-     un mapa: cada elemento es una carta. Lo que se muestra en pantalla es
-     cuantas quedan, o sea banca.cartas.length. */
+  // Mazo de cartas de desarrollo por comprar; interesa cuantas quedan (banca.cartas.length)
   cartas: number[];
 }
 
@@ -20,9 +18,7 @@ const PUERTO_DE: Record<Recurso, number> = {
   mineral: TIPO_PUERTO.MINERAL,
 };
 
-/* Cuantas cartas del recurso pide la banca por una. Es la misma cuenta que
-   obtenerTasaDeComercio del backend: 4, 3 con un puerto generico propio y 2
-   con un puerto propio de ese recurso. El servidor la vuelve a calcular. */
+// Cuantas cartas pide la banca por una (4, 3 con puerto generico, 2 con puerto del recurso)
 export function tasaDeComercio(
   tablero: Pick<DatosTablero, 'vertices' | 'puertos'>,
   sessionId: string,

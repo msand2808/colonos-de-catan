@@ -7,7 +7,6 @@ import { otroTema, temaInicial, type Tema } from "./common/tema";
 
 const CLAVE_TEMA = "tema";
 
-// El navegador puede bloquear el almacenamiento (modo privado); entonces no se recuerda.
 function leerTemaGuardado(): string | null {
   try {
     return localStorage.getItem(CLAVE_TEMA);
@@ -29,14 +28,12 @@ function App() {
     temaInicial(leerTemaGuardado(), window.matchMedia?.("(prefers-color-scheme: dark)").matches ?? false)
   );
 
-  /* data-theme lo usa tema.css para sus variables y data-bs-theme activa el
-     modo oscuro de Bootstrap y react-bootstrap. */
+  // data-theme para tema.css y data-bs-theme para Bootstrap
   useEffect(() => {
     document.documentElement.dataset.theme = tema;
     document.documentElement.dataset.bsTheme = tema === "oscuro" ? "dark" : "light";
   }, [tema]);
 
-  // Los componentes de MUI toman sus colores de este tema.
   const temaMui = useMemo(
     () => createTheme({ palette: { mode: tema === "oscuro" ? "dark" : "light" } }),
     [tema]

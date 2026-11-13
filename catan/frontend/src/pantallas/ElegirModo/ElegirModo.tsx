@@ -6,8 +6,7 @@ import CardContent from "@mui/material/CardContent";
 import Link from "@mui/material/Link";
 import Typography from "@mui/material/Typography";
 
-// Las dos opciones de la pantalla. El borde de arriba usa colores del tema
-// de MUI: rojo para crear (ladrillo) y celeste para unirse (mar).
+// Las dos opciones; el borde usa colores del tema de MUI
 const OPCIONES = [
   {
     id: "crear",

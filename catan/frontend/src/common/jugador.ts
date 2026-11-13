@@ -12,10 +12,8 @@ export interface Recursos {
 export const RECURSOS: Recurso[] = ['madera', 'trigo', 'lana', 'ladrillo', 'mineral'];
 
 
-/* cartas de desarrollo
-   El backend las guarda en DOS mapas, cartas_usables y cartas_inusables. Las
-   claves son el enum CartasDesarrollo y van entre comillas porque las claves de
-   un MapSchema siempre llegan como texto. */
+// Cartas de desarrollo: el backend las guarda en dos mapas (usables e inusables).
+// Las claves son el enum CartasDesarrollo, como texto.
 
 export const CARTA = {
   CABALLERO: '1',
@@ -42,9 +40,8 @@ export const NOMBRE_CARTA: Record<string, string> = {
 };
 
 
-/* construcciones disponibles
-   generarConstruccionesDisponibles.ts: 5 asentamientos, 4 ciudades, 15 caminos.
-   Las claves son el enum Construccion, sin el 0 (VACIO). */
+// Construcciones disponibles (generarConstruccionesDisponibles.ts): 5 asentamientos, 4 ciudades, 15 caminos.
+// Las claves son el enum Construccion, sin el 0.
 
 export const PIEZA = {
   ASENTAMIENTO: '1',
@@ -65,18 +62,15 @@ export const NOMBRE_PIEZA: Record<string, string> = {
 };
 
 
-/* el jugador
-   La clave del mapa es el sessionId que Colyseus le asigna a cada cliente.
-   Los diez campos son copia literal de backend/src/schemas/Jugador.ts. Lo
-   unico que el backend NO manda es el color: se calcula abajo. */
+// El jugador. La clave del mapa es el sessionId. Copia de backend/src/schemas/Jugador.ts,
+// menos el color, que se calcula abajo.
 
 export interface Jugador {
   nombre: string;
   puntuacion: number;
   puntosParaGanar: number;
   recursos: Recursos;
-  /* Son dos mapas separados: las inusables se compraron este turno y pasan a
-     usables al pasar el turno. No los junten en uno solo. */
+  // Las inusables se compraron este turno y pasan a usables al pasar el turno
   cartas_usables: Cartas;
   cartas_inusables: Cartas;
   construccionesDisponibles: ConstruccionesDisponibles;
@@ -91,16 +85,12 @@ export interface Jugador {
   color?: string;
 }
 
-/* Aqui SI va un Record de clave suelta, porque las claves son sessionId que no
-   se conocen hasta que alguien entra a la sala. */
+// Record porque los sessionId no se conocen hasta que alguien entra
 export type Jugadores = Record<string, Jugador>;
 
 
-/* --------------------------------------------------------------- color
-   El backend asigna el color al entrar a la sala y lo manda en el jugador.
-   No sale del orden de turnos porque ese orden se mezcla al iniciar y el
-   color cambiaria entre la sala de espera y el tablero.
-   Si no llega (datos de prueba), se usa la posicion en el orden de turnos. */
+// Color: lo manda el backend al entrar a la sala. Si no llega (datos de prueba),
+// se usa la posicion en el orden de turnos.
 
 export const COLORES = ['#D34F3E', '#3E7FD3', '#4CA36B', '#E0A030'];
 
@@ -118,9 +108,7 @@ export function colorDeJugador(
 
 export type EstadoColor = 'mio' | 'ocupado' | 'libre';
 
-/* Para el selector de la sala de espera: cada color de la paleta, en orden,
-   con si es el mio, lo tiene otro jugador o se puede elegir. El servidor
-   vuelve a revisar que no este ocupado al recibir msgElegirColor. */
+// Para el selector de la sala de espera: cada color, en orden, y si es mio, ocupado o libre
 export function coloresParaElegir(
   jugadores: { sessionId: string; color: string }[],
   miSessionId: string,
@@ -133,9 +121,7 @@ export function coloresParaElegir(
 }
 
 
-/* cuentas
-   No se guardan como campo. Si se guardaran habria que mantenerlas
-   sincronizadas con los mapas y tarde o temprano mentirian. */
+// Cuentas: no se guardan como campo para que no se desincronicen
 
 function sumar(mapa: Recursos | Cartas): number {
   return Object.values(mapa).reduce((total, n) => total + n, 0);
@@ -156,9 +142,8 @@ export function totalEnMano(jugador: Jugador): number {
   return totalRecursos(jugador) + totalCartas(jugador);
 }
 
-/* Con mas de 7 recursos, si sale un 7 hay que descartar la mitad. Esto es un
-   aviso que damos nosotros ANTES de que pase; el descarte de verdad lo manda
-   el backend en partida.jugadoresParaDescartar. */
+// Con mas de 7 recursos, un 7 obliga a descartar la mitad. Es solo un aviso;
+// el descarte real lo manda el backend en partida.jugadoresParaDescartar.
 export const LIMITE_DESCARTE = 7;
 
 export function enRiesgoDeDescarte(jugador: Jugador): boolean {

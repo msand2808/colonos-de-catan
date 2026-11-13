@@ -32,8 +32,7 @@ function FinPartida({ abierto, nombreGanador, soyElGanador, ganadorEsBot, lugare
     return (
         <Dialog
             open={abierto}
-            // Obligatorio: Escape y el clic afuera llaman a onClose, que no hace
-            // nada; solo se cierra con sus botones.
+            // Escape y clic afuera no cierran; solo los botones
             onClose={() => {}}
             fullWidth
             maxWidth="sm"

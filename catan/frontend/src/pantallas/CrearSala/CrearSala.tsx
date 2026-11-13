@@ -17,7 +17,7 @@ import {
   validarCodigoAcceso,
 } from "../validacionSala";
 
-// Lo que CatanRoom.onCreate sabe leer (además del nombre del jugador).
+// Lo que lee CatanRoom.onCreate ademas del nombre
 export interface DatosNuevaSala {
   alias: string;
   privada: boolean;
@@ -26,14 +26,14 @@ export interface DatosNuevaSala {
 
 interface CrearSalaProps {
   nombreJugador: string;
-  // Devuelve null si la sala se creó, o el mensaje de error a mostrar.
+  // null si se creo, o el mensaje de error
   onCrear: (datos: DatosNuevaSala) => Promise<string | null>;
   onVolver: () => void;
 }
 
 function CrearSala({ nombreJugador, onCrear, onVolver }: CrearSalaProps) {
   const [alias, setAlias] = useState(() => aliasSugerido(nombreJugador));
-  // Apagado por defecto: las salas son públicas salvo que se pida lo contrario.
+  // Publica por defecto
   const [privada, setPrivada] = useState(false);
   const [codigo, setCodigo] = useState("");
   const [intentoEnviar, setIntentoEnviar] = useState(false);
@@ -41,7 +41,6 @@ function CrearSala({ nombreJugador, onCrear, onVolver }: CrearSalaProps) {
   const [errorServidor, setErrorServidor] = useState<string | null>(null);
 
   const errorAlias = validarAlias(alias);
-  // El código solo importa si la sala es privada.
   const errorCodigo = privada ? validarCodigoAcceso(codigo) : null;
   const mostrarErrorAlias = intentoEnviar && errorAlias;
   const mostrarErrorCodigo = intentoEnviar && errorCodigo;
@@ -58,8 +57,7 @@ function CrearSala({ nombreJugador, onCrear, onVolver }: CrearSalaProps) {
       privada,
       codigoAcceso: privada ? codigo : undefined,
     });
-    // Si todo salió bien, Navegacion ya cambió de pantalla y este
-    // componente se desmontó: no hay que tocar su estado.
+    // Si salio bien Navegacion ya cambio de pantalla
     if (error) {
       setErrorServidor(error);
       setCreando(false);
@@ -140,7 +138,7 @@ function CrearSala({ nombreJugador, onCrear, onVolver }: CrearSalaProps) {
                 fullWidth
                 autoComplete="off"
                 value={codigo}
-                // Los espacios no se admiten: se quitan mientras se escribe.
+                // Sin espacios
                 onChange={(e) => setCodigo(e.target.value.replace(/\s/g, ""))}
                 error={Boolean(mostrarErrorCodigo)}
                 helperText={
@@ -152,8 +150,7 @@ function CrearSala({ nombreJugador, onCrear, onVolver }: CrearSalaProps) {
                   </span>
                 }
                 slotProps={{ htmlInput: { maxLength: LARGO_MAXIMO_CODIGO, spellCheck: false } }}
-                // Letra monoespaciada para leer bien el código. Sin text-transform:
-                // el backend compara el código tal cual se escribió.
+                // Sin text-transform: el backend compara el codigo tal cual
                 sx={{
                   "& .MuiInputBase-input": { fontFamily: "monospace", fontSize: "1.2rem", letterSpacing: "0.25em" },
                   "& .MuiInputBase-input::placeholder": {

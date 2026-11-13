@@ -1,4 +1,3 @@
-/* MARCO: el fondo y los colores vienen de tema.css (.tema-fondo). */
 .marco {
   display: flex;
   flex-direction: column;
