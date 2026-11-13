@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { porcentajeProgreso } from './progreso';
+import { metaDePuntos, porcentajeProgreso } from './progreso';
 
 describe('porcentajeProgreso', () => {
   it('con 0 puntos la barra va vacia', () => {
@@ -27,7 +27,31 @@ describe('porcentajeProgreso', () => {
     expect(porcentajeProgreso(3, -1)).toBe(0);
   });
 
-  it('la meta baja con las cartas de victoria y el porcentaje sube', () => {
+  it('funciona con cualquier meta, no solo con 10', () => {
     expect(porcentajeProgreso(4, 8)).toBe(50);
+  });
+});
+
+describe('metaDePuntos', () => {
+  const sinCartas = { '1': 0, '2': 0, '3': 0, '4': 0, '5': 0 };
+
+  it('al empezar la meta son los puntos que faltan', () => {
+    const jugador = { puntuacion: 0, puntosParaGanar: 10, cartas_usables: sinCartas, cartas_inusables: sinCartas };
+    expect(metaDePuntos(jugador)).toBe(10);
+  });
+
+  it('no baja cuando construyo: lo que gano lo dejo de deber', () => {
+    const jugador = { puntuacion: 1, puntosParaGanar: 9, cartas_usables: sinCartas, cartas_inusables: sinCartas };
+    expect(metaDePuntos(jugador)).toBe(10);
+  });
+
+  it('las cartas de victoria ocultas no cambian la meta, asi no se delatan', () => {
+    const jugador = {
+      puntuacion: 3,
+      puntosParaGanar: 5,
+      cartas_usables: { ...sinCartas, '2': 1 },
+      cartas_inusables: { ...sinCartas, '2': 1 },
+    };
+    expect(metaDePuntos(jugador)).toBe(10);
   });
 });

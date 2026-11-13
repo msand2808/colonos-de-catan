@@ -2,7 +2,7 @@ import type { Jugadores } from '../common/jugador';
 import { totalCartas, totalRecursos, enRiesgoDeDescarte, colorDeJugador } from '../common/jugador';
 import type { DatosPartida } from '../common/partida';
 import { infoCaminoMasLargo } from '../common/caminoMasLargo';
-import { porcentajeProgreso } from '../common/progreso';
+import { metaDePuntos, porcentajeProgreso } from '../common/progreso';
 import './infoJugadores.css';
 
 interface Props {
@@ -46,7 +46,8 @@ function InfoJugadores({ jugadores, ordenJugadores, miSessionId, turnoActual, ej
         const enTurno = turnoActual !== '' && id === turnoActual;
         const tieneEjercito = ejercitoMasGrande !== '' && id === ejercitoMasGrande;
         const camino = infoCaminoMasLargo(partida, id);
-        const progreso = porcentajeProgreso(j.puntuacion, j.puntosParaGanar);
+        const meta = metaDePuntos(j);
+        const progreso = porcentajeProgreso(j.puntuacion, meta);
 
         return (
           <div
@@ -61,7 +62,7 @@ function InfoJugadores({ jugadores, ordenJugadores, miSessionId, turnoActual, ej
               <span className="ijNombre">
                 {yo && '(Yo) '}{j.esBot && <span title="Bot">🤖 </span>}{j.nombre}
               </span>
-              <span className="ijPuntos">{j.puntuacion}/{j.puntosParaGanar}</span>
+              <span className="ijPuntos">{j.puntuacion}/{meta}</span>
             </div>
 
             <div
@@ -69,8 +70,8 @@ function InfoJugadores({ jugadores, ordenJugadores, miSessionId, turnoActual, ej
               role="progressbar"
               aria-label={`Puntos de ${j.nombre}`}
               aria-valuemin={0}
-              aria-valuemax={j.puntosParaGanar}
-              aria-valuenow={Math.min(j.puntuacion, j.puntosParaGanar)}
+              aria-valuemax={meta}
+              aria-valuenow={Math.min(j.puntuacion, meta)}
             >
               <div className="ijRelleno" style={{ width: `${progreso}%` }} />
             </div>
