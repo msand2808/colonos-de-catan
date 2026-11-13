@@ -16,9 +16,7 @@ export function recursoParaDescartar(jugador: Jugador): string {
     return elegido;
 }
 
-//* Hexagonos donde el bot puede poner al ladron, del mejor al peor. Primero los
-//* que no tocan construcciones suyas; entre ellos, el que mas quita a los rivales
-//* (ciudad 2, poblado 1, por lo seguido que sale su numero). Empates al azar
+//* Hexagonos para el ladron, del mejor al peor: primero los que no tocan al bot y quitan mas a los rivales
 export function ordenarHexagonosParaLadron(tablero: Tablero, id: string): Hexagono[] {
     const lista = mezclar([...tablero.hexagonos.values()]) as Hexagono[];
     const candidatos = lista.filter((hexagono) =>

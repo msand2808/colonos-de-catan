@@ -12,8 +12,7 @@ describe("bots: si solo quedan bots, la partida se cierra", () => {
     before(async () => colyseus = await servidorDePrueba());
     beforeEach(async () => colyseus.cleanup());
 
-    //* Sala en juego con Ana, Beto y dos bots. Es el turno del primer bot,
-    //* que todavia no lanza los dados
+    //* Sala en juego con Ana, Beto y dos bots; es el turno del primer bot
     async function prepararSala() {
         const { room, ana, beto } = await prepararJuego(colyseus, FaseJuego.DADOS);
         room.state.jugadores.set("bot-2", new Jugador("Bot 2", true));

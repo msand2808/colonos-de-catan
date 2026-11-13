@@ -2,9 +2,7 @@ import { Jugador } from "../schemas/Jugador.js";
 import { OfertaIntercambio } from "../schemas/OfertaIntercambio.js";
 import { objetivoBot } from "./objetivoBot.js";
 
-//* Si el bot acepta la oferta: debe tener lo que le piden, no puede regalar lo
-//* que necesita para lo que ya puede pagar ni para su objetivo, y debe salir
-//* ganando: recibe un recurso que le falta o recibe mas cartas de las que da
+//* Si el bot acepta la oferta: tiene lo que piden, no regala lo que necesita y sale ganando
 export function debeAceptarOferta(bot: Jugador, oferta: OfertaIntercambio): boolean {
     const { recursoOfrecido, cantidadOfrecida, recursoSolicitado, cantidadSolicitada } = oferta;
 

@@ -5,8 +5,7 @@ import { Construccion, FaseJuego, FasePartida } from "../src/common/enums.js";
 import { ID_BOT, escucharLogs, esperar, prepararJuego } from "./salaEnJuego.js";
 import { actualizarCaminoMasLargo } from "../src/functions/actualizarCaminoMasLargo.js";
 
-//* Las 6 aristas alrededor del hexagono h,d en orden, asi cualquier tramo
-//* seguido del arreglo es un camino continuo
+//* Las 6 aristas alrededor del hexagono h,d en orden: cualquier tramo seguido es continuo
 function anillo(h: number, d: number) {
     return [`${h},${d},1`, `${h},${d},2`, `${h - 1},${d + 1},0`, `${h},${d + 1},1`, `${h + 1},${d},2`, `${h},${d},0`];
 }
@@ -25,7 +24,6 @@ describe("Camino mas largo durante la partida", () => {
     before(async () => colyseus = await servidorDePrueba());
     beforeEach(async () => colyseus.cleanup());
 
-    //* Helpers para preparar la sala
     function ponerCaminos(room: any, claves: string[], sessionId: string) {
         claves.forEach((clave) => room.state.tablero.aristas.get(clave).setPropietario(sessionId));
     }

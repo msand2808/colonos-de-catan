@@ -8,8 +8,7 @@ import { Banca } from "../src/schemas/Banca.js";
 import { Coordenada } from "../src/schemas/Coordenada.js";
 import { Construccion, Terreno } from "../src/common/enums.js";
 
-//* Escenario: dos hexagonos de madera (0,0) y (2,2) y uno de trigo (4,4).
-//* El ladron esta lejos, en (9,9), salvo que la prueba lo mueva.
+//* Dos hexagonos de madera (0,0) y (2,2) y uno de trigo (4,4); el ladron esta lejos, en (9,9)
 function crearEscenario() {
     const jugadores = new MapSchema<Jugador>();
     jugadores.set("A", new Jugador("Ana"));

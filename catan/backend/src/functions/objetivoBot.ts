@@ -13,10 +13,7 @@ export function faltantes(jugador: Jugador, costo: Costo): Costo {
 
 const total = (costo: Costo) => Object.values(costo).reduce((a, b) => a + b, 0);
 
-//* Costos que el bot ya puede pagar (los va a construir por su cuenta) y su
-//* objetivo: lo que aun no puede pagar y menos cartas le falta. Si empatan gana
-//* el de mayor prioridad (ciudad, poblado, camino, carta). Sin objetivo si ya
-//* puede pagar todo
+//* Lo que el bot ya puede pagar y su objetivo: lo que aun no puede pagar y menos le falta
 export function objetivoBot(jugador: Jugador): {
     pagables: Costo[],
     objetivo?: { nombre: string, costo: Costo, faltan: Costo }

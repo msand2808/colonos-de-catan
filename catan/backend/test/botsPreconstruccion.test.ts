@@ -17,8 +17,7 @@ describe("bots en preconstruccion", () => {
     before(async () => colyseus = await servidorDePrueba());
     beforeEach(async () => colyseus.cleanup());
 
-    //* Sala en preconstruccion con Ana y bots. `orden` define quien va primero
-    //* ("ana" o "bot"); la pausa del bot es 0 salvo que se indique.
+    //* Sala en preconstruccion con Ana y bots; `orden` define quien va primero
     async function prepararSala(orden: string[], pausaBot = 0) {
         const room = await colyseus.createRoom<CatanRoom>("catan", { pausaBot });
         const ana = await colyseus.connectTo(room, { nombre: "Ana" });

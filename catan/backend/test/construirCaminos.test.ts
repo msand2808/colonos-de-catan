@@ -37,7 +37,6 @@ describe("construirCamino en fase de juego", () => {
         banca = new Banca();
     });
 
-    //* Helpers para preparar el tablero
     function ponerCamino(clave: string, propietario: string) {
         aristas.get(clave).setPropietario(propietario);
     }
