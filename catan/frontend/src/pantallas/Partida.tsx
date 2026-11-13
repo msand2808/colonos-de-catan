@@ -35,7 +35,7 @@ import Construir, {
   type TipoConstruccion,
 } from '../componentes/construir';
 import { FASE_JUEGO, FASE_PARTIDA, FASE_PRECONSTRUCCION } from '../common/fases';
-import { puedePasarTurno as sePuedePasarTurno } from '../common/turno';
+import { puedePasarTurno as sePuedePasarTurno, textoFase } from '../common/turno';
 import Alert from '@mui/material/Alert';
 import Button from '@mui/material/Button';
 import Typography from '@mui/material/Typography';
@@ -693,6 +693,7 @@ function Partida({ sala, onSolicitarConstruccion, onSalir }: Props) {
             jugadores={jugadores}
             ordenJugadores={ordenJugadores}
             miSessionId={miSessionId}
+            turnoActual={turnoActual}
             ejercitoMasGrande={partidaActual?.ejercitoMasGrande ?? ''}
             partida={partidaActual}
           />
@@ -807,6 +808,8 @@ function Partida({ sala, onSolicitarConstruccion, onSalir }: Props) {
             sessionIdTurno={turnoActual}
             jugadores={jugadores}
             ordenJugadores={ordenJugadores}
+            esMiTurno={esMiTurno}
+            fase={textoFase(partidaActual)}
           />
           <Button
             className="flex-fill"

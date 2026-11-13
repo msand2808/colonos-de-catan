@@ -1,0 +1,101 @@
+.ijPanel {
+  display: flex;
+  gap: 4px;
+  width: 100%;
+  height: 100%;
+}
+
+.ijJugador {
+  position: relative;
+  flex: 1 1 0;
+  min-width: 0;
+  padding: 4px 8px;
+  border-radius: var(--radio-md);
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  gap: 3px;
+  color: #fff;
+  overflow: hidden;
+}
+
+.ijCabecera {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  min-width: 0;
+}
+
+.ijNombre {
+  flex: 1 1 auto;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-weight: 600;
+}
+
+.ijPuntos {
+  flex-shrink: 0;
+  font-weight: 700;
+}
+
+.ijBarra {
+  height: 6px;
+  border-radius: 3px;
+  background: rgba(0, 0, 0, 0.3);
+  overflow: hidden;
+}
+
+.ijRelleno {
+  height: 100%;
+  border-radius: 3px;
+  background: #fff;
+}
+
+.ijChips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 2px 4px;
+  font-size: 0.8rem;
+  line-height: 1.2;
+}
+
+.ijChip {
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+  padding: 0 6px;
+  border-radius: 999px;
+  background: rgba(0, 0, 0, 0.3);
+}
+
+.ijChipDestacado {
+  background: var(--trigo-claro);
+  color: var(--tinta);
+  font-weight: 700;
+}
+
+/* Borde fijo y un contorno que late por encima: solo transform y opacity. */
+.ijTurno {
+  box-shadow: inset 0 0 0 3px #fff;
+}
+
+.ijTurno::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  border: 3px solid #fff;
+  pointer-events: none;
+  animation: ijPulso 1.6s ease-in-out infinite;
+}
+
+@keyframes ijPulso {
+  0%, 100% { opacity: 1; transform: scale(1); }
+  50%      { opacity: 0.25; transform: scale(0.96); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .ijTurno::after { animation: none; }
+}
