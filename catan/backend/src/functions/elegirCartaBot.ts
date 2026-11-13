@@ -13,7 +13,7 @@ export type JugadaCarta =
     | { tipo: "abundancia", recurso1: string, recurso2: string }
     | { tipo: "monopolio", recurso: string };
 
-//* Cartas de los rivales que tiene que haber como minimo para que valga la pena el monopolio
+//* Minimo de cartas rivales para que valga la pena el monopolio
 const MINIMO_MONOPOLIO = 3;
 
 const tiene = (jugador: Jugador, carta: Desarrollo) =>
@@ -28,7 +28,7 @@ function ladronEstorba(tablero: Tablero, id: string): boolean {
     );
 }
 
-//* Los dos recursos que mas le faltan al bot para pagar su objetivo, que la banca pueda dar
+//* Los dos recursos que mas le faltan al bot, que la banca pueda dar
 function recursosParaAbundancia(bot: Jugador, banca: Banca): [string, string] | null {
     const { objetivo } = objetivoBot(bot);
     if (!objetivo) return null;
@@ -71,9 +71,7 @@ function recursoParaMonopolio(jugadores: MapSchema<Jugador>, id: string): string
     return mejor;
 }
 
-//* La carta que el bot juega en su turno, o null si guarda todas. Prioridad:
-//* caballero (si el ladron le estorba), carreteras, abundancia y monopolio.
-//* Las cartas de puntos de victoria no se juegan: ya cuentan solas
+//* La carta que el bot juega en su turno, o null si las guarda. Las de puntos no se juegan
 export function elegirJugadaCarta(
     tablero: Tablero,
     jugadores: MapSchema<Jugador>,

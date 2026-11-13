@@ -1,8 +1,7 @@
 import { puntosDelDado, type ResultadoDados } from '../common/dados';
 import './tirarDados.css';
 
-// El resultado siempre llega desde el evento "dados" de CatanRoom.
-// No se generan números en el cliente, para que todos vean la misma tirada.
+// El resultado llega del evento "dados", asi todos ven la misma tirada
 export type { ResultadoDados };
 
 interface Props {
@@ -51,8 +50,7 @@ function TirarDados({ resultado, puedeLanzar, lanzando, onLanzar }: Props) {
       <h2 id="tirar-dados-titulo" className="tirarDados__titulo">Dados</h2>
       <p className="tirarDados__estado" role="status">{estado}</p>
 
-      {/* La animacion arranca cuando llega el evento, no al hacer clic: asi
-          todos (y las tiradas de los bots) se ven igual y al mismo tiempo. */}
+      {/* Arranca con el evento, no con el clic, para que todos la vean igual */}
       {resultado ? (
         <div key={idTirada(resultado)} className={esSiete ? 'tirarDados__tirada tirarDados--siete' : 'tirarDados__tirada'}>
           <div className="tirarDados__caras">

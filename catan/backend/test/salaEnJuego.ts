@@ -7,8 +7,7 @@ export type Log = { jugador: string, mensaje: string };
 
 export const ID_BOT = "bot-1";
 
-//* Sala en fase de juego con Ana, Beto y un bot. Es el turno de Ana; se puede
-//* mover el turno con `turno` y la fase con `faseJuego`.
+//* Sala en juego con Ana, Beto y un bot; empieza Ana (se puede cambiar `turno` y `faseJuego`)
 export async function prepararJuego(
     colyseus: ColyseusTestServer,
     faseJuego: FaseJuego = FaseJuego.ACCIONES

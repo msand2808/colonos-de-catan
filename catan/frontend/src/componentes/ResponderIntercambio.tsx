@@ -16,8 +16,7 @@ interface Props {
 //* Se muestra a los jugadores que todavia no respondieron la propuesta activa
 
 function ResponderIntercambio({ oferta, nombreOferente, misRecursos, enviando, onResponder }: Props) {
-    /* Sin lo que se pide, aceptar no sirve: el backend lo cambia a "no". Por eso
-       en ese caso solo se deja rechazar. */
+    // Si no tengo lo que piden, el backend lo cambia a "no": solo se deja rechazar
     const tengo = misRecursos?.[oferta.recursoSolicitado as Recurso] ?? 0;
     const alcanza = tengo >= oferta.cantidadSolicitada;
 

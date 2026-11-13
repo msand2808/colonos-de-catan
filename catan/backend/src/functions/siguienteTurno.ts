@@ -11,9 +11,7 @@ export function siguienteTurno(
     const indiceSiguiente =
         (indiceActual + 1) % partida.ordenJugadores.length;
 
-    // Cambiamos el turno al siguiente jugador
     partida.turnoActual = partida.ordenJugadores[indiceSiguiente];
 
-    // Cambiamos la fase del juego a DADOS
     partida.faseJuego = FaseJuego.DADOS;
 }

@@ -283,8 +283,7 @@ export class CatanRoom extends Room {
     
   };
 
-  //* Manda al cliente el error de una accion, si lo hubo. Los handlers solo llaman
-  //* a su accion y usan esto; los bots llaman a la accion y leen el resultado
+  //* Manda el error de una accion al cliente, si lo hubo
   responderAccion(client: Client, resultado: ResultadoAccion) {
     if (resultado.error) {
       client.send("error", {
@@ -401,10 +400,10 @@ export class CatanRoom extends Room {
 
     this.ofertas.clear();
 
-    /** Activar las cartas compradas del jugador */
+    //* Activar las cartas compradas del jugador
     activarCartasCompradas(this.jugadores.get(sessionId));
 
-    /** Permitir usar una carta en el siguiente turno */
+    //* Permitir usar una carta en el siguiente turno
     this.partida.cartaJugable = true;
 
     //* Cancelar ofertas de intercambio activas
@@ -902,7 +901,7 @@ export class CatanRoom extends Room {
     return this.resolverRobo(sessionId, resultado.jugadoresInvolucrados);
   }
 
-  //* Despues de mover al ladron (con un 7 o con el caballero) se decide a quien robar
+  //* Decidir a quien robar
   resolverRobo(sessionId: string, jugadoresInvolucrados: string[]): ResultadoAccion {
     //* Si no hay jugadores, pasamos a las ACCIONES
     if (jugadoresInvolucrados.length === 0) {
@@ -1317,8 +1316,7 @@ export class CatanRoom extends Room {
     return exito();
   }
 
-  //* Lo que pasa despues de cada construccion en juego: revisar el camino
-  //* mas largo y si quien construyo llego a 10 puntos
+  //* Revisar camino mas largo y victoria tras construir
   despuesDeConstruir(sessionId: string) {
     this.revisarCaminoMasLargo();
     verificarVictoria(this.partida, this.jugadores.get(sessionId), sessionId, this);
@@ -1352,7 +1350,7 @@ export class CatanRoom extends Room {
     }
   }
 
-  //* Registrar el rechazo de un jugador a la oferta activa y cancelarla si todos rechazaron
+  //* Registrar el rechazo a la oferta y cancelarla si todos rechazaron
   rechazarOferta(sessionId: string) {
     this.partida.ofertaIntercambio.registrarRespuesta(sessionId, -1);
 
@@ -1372,14 +1370,13 @@ export class CatanRoom extends Room {
     }
   }
 
-  //* Agenda la respuesta de los bots a la oferta activa tras la pausa
+  //* Agenda la respuesta de los bots a la oferta
   programarRespuestasBots() {
     this.timerRespuestasBots?.clear();
     this.timerRespuestasBots = this.clock.setTimeout(() => this.responderBots(), this.pausaBot);
   }
 
-  //* Cada bot con respuesta pendiente acepta o rechaza. Usa la misma accion que un
-  //* humano; si uno acepta la oferta se cierra y los demas ya no responden
+  //* Cada bot pendiente acepta o rechaza como un humano
   responderBots() {
     for (const [id, respuesta] of [...this.partida.ofertaIntercambio.respuestas.entries()]) {
       if (this.partida.ofertaIntercambio.jugador === "") return;
@@ -1390,13 +1387,11 @@ export class CatanRoom extends Room {
     }
   }
 
-  //* Si le toca a un bot, agenda su siguiente jugada tras la pausa. Solo hay una
-  //* jugada agendada a la vez, asi que llamarlo de mas no hace que juegue doble
+  //* Si le toca a un bot, agenda su jugada. Solo hay una agendada a la vez
   programarTurnoBot() {
     this.timerBot?.clear();
 
-    //* En el descarte juegan los bots que deben descartar, sea o no su turno.
-    //* Si solo faltan humanos, se les espera a ellos
+    //* En el descarte juegan los bots que deban descartar; si solo faltan humanos se espera
     if (this.partida.fase === FasePartida.JUEGO && this.partida.faseJuego === FaseJuego.DESCARTE) {
       if (this.botsPorDescartar().length > 0) {
         this.timerBot = this.clock.setTimeout(() => this.descartarBots(), this.pausaBot);
@@ -1413,8 +1408,7 @@ export class CatanRoom extends Room {
     }
   }
 
-  //* Un paso del bot en su turno: lanzar los dados, mover el ladron y robar si
-  //* salio un 7, construir una cosa o pasar el turno si ya no puede construir nada
+  //* Un paso del bot en su turno
   jugarTurnoBot() {
     const id = this.partida.turnoActual;
     if (this.partida.fase !== FasePartida.JUEGO || !this.jugadores.get(id)?.esBot) return;
@@ -1430,12 +1424,11 @@ export class CatanRoom extends Room {
     } else if (this.partida.faseJuego === FaseJuego.CARRETERAS) {
       this.colocarCaminoGratisBot(id);
     } else if (this.partida.faseJuego === FaseJuego.ACCIONES) {
-      //* Una carta de desarrollo por turno, antes de construir: puede dar lo que falta
+      //* Una carta por turno, antes de construir
       if (this.partida.cartaJugable && this.jugarCartaBot(id)) {
         this.programarTurnoBot();
         return;
       }
-      //* accionPasarTurno ya programa al siguiente si tambien es bot
       if (!this.construirBot(id)) {
         this.accionPasarTurno(id);
         return;
@@ -1447,8 +1440,7 @@ export class CatanRoom extends Room {
     this.programarTurnoBot();
   }
 
-  //* Juega la carta que elija elegirJugadaCarta con la misma accion que un humano.
-  //* Devuelve si la jugo; si la accion falla la carta se queda en la mano
+  //* Juega la carta que elija el bot; si la accion falla, la carta se queda
   jugarCartaBot(id: string): boolean {
     const jugada = elegirJugadaCarta(this.tablero, this.jugadores, this.banca, id);
     if (!jugada) return false;
@@ -1465,8 +1457,7 @@ export class CatanRoom extends Room {
     }
   }
 
-  //* Un camino de la carta de carreteras, en la mejor arista valida. Si no hay
-  //* ninguna se cancela lo que queda de la carta para no dejar la partida trabada
+  //* Un camino de la carta de carreteras; si no hay donde, se cancela lo que queda
   colocarCaminoGratisBot(id: string) {
     const { aristas, vertices, hexagonos } = this.tablero;
     for (const a of ordenarAristasPorPuntos(aristas, vertices, hexagonos)) {
@@ -1475,21 +1466,19 @@ export class CatanRoom extends Room {
     this.terminarCaminosGratis();
   }
 
-  //* Cancelar los caminos gratis que queden de la carta de carreteras y volver a
-  //* las acciones (sea humano o bot)
+  //* Cancelar los caminos gratis que queden y volver a acciones
   terminarCaminosGratis() {
     this.partida.carreterasGratis = 0;
     this.partida.faseJuego = FaseJuego.ACCIONES;
   }
 
-  //* Bots que todavia deben descartar por el 7
+  //* Bots que deben descartar por el 7
   botsPorDescartar(): string[] {
     return [...this.partida.jugadoresParaDescartar.keys()]
       .filter((id) => this.jugadores.get(id)?.esBot);
   }
 
-  //* Cada bot que debe descartar suelta la mitad de sus cartas, siempre del
-  //* recurso que mas tiene. accionDescartarRecursos pasa al ladron al terminar
+  //* Cada bot descarta la mitad de sus cartas, del recurso que mas tiene
   descartarBots() {
     if (this.partida.faseJuego !== FaseJuego.DESCARTE) return;
 
@@ -1503,9 +1492,7 @@ export class CatanRoom extends Room {
     this.programarTurnoBot();
   }
 
-  //* Construye lo primero que pueda con esta prioridad: ciudad, poblado, camino,
-  //* carta de desarrollo. Usa las mismas acciones que un humano, asi que solo
-  //* construye en lugares validos. Devuelve si construyo algo
+  //* Construye lo primero que pueda: ciudad, poblado, camino o carta. Devuelve si construyo algo
   construirBot(id: string): boolean {
     const { vertices, aristas, hexagonos } = this.tablero;
     const verticesOrdenados = ordenarVerticesPorPuntos(vertices, hexagonos);
@@ -1523,8 +1510,7 @@ export class CatanRoom extends Room {
     return !this.accionComprarCarta(id).error;
   }
 
-  //* Un paso del bot: poblado en el mejor vertice valido o camino pegado a el.
-  //* Usa las mismas acciones que un humano, asi que valida igual
+  //* Un paso del bot: poblado en el mejor vertice o camino pegado a el
   jugarTurnoBotPreconstruccion() {
     const id = this.partida.turnoActual;
     const bot = this.jugadores.get(id);
@@ -1555,11 +1541,10 @@ export class CatanRoom extends Room {
     }
 
     //* Tras el poblado sigue el camino; tras el camino, el siguiente turno
-    //* (accionColocarCamino ya lo programa al avanzar el turno)
     if (this.partida.turnoActual === id) this.programarTurnoBot();
   }
 
-  //* Solo el anfitrion maneja los bots, y solo mientras se esta en el lobby
+  //* Solo el anfitrion maneja los bots, y solo en el lobby
   validarManejoDeBots(client: Client): string | null {
     if (this.partida.creador !== client.sessionId) {
       return "Solo el anfitrion puede agregar o quitar bots";
@@ -1570,8 +1555,7 @@ export class CatanRoom extends Room {
     return null;
   }
 
-  //* Saca a un jugador (humano o bot) antes de iniciar la partida. Si era el
-  //* anfitrion, pasa al siguiente humano en entrar: un bot nunca es anfitrion
+  //* Saca a un jugador antes de iniciar. Si era el anfitrion pasa al siguiente humano
   sacarDelLobby(sessionId: string) {
     this.jugadores.delete(sessionId);
 
@@ -1592,8 +1576,7 @@ export class CatanRoom extends Room {
     this.actualizarCupo();
   }
 
-  //* Los bots no son clientes, asi que Colyseus no los cuenta para llenar la
-  //* sala: se bloquea a mano cuando humanos + bots llegan al maximo
+  //* Los bots no son clientes: se bloquea la sala a mano cuando humanos + bots llegan al maximo
   actualizarCupo() {
     if (this.partida.fase !== FasePartida.LOBBY) return;
     if (this.jugadores.size >= this.maxClients) {
@@ -1654,8 +1637,7 @@ export class CatanRoom extends Room {
       return;
     }
 
-    //* Si ya se estaba jugando se debe eliminar completamente
-    //* (si la partida ya termino, salir no cambia nada: ni el ganador ni los jugadores)
+    //* Si ya se estaba jugando se elimina del todo (si ya termino, no cambia nada)
     if(this.partidaEnCurso()){
       //* Ver si era el creador de la sala
       const eraCreador = this.partida.creador === client.sessionId;

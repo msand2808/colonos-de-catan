@@ -22,7 +22,7 @@ import { salaDesdeListado, salasDisponibles, type MetadataSala, type SalaDisponi
 
 type EstadoConexion = "conectando" | "conectado" | "error";
 
-// Sala a la que se le está pidiendo el código de acceso.
+// Sala que pide codigo de acceso
 interface SalaPorCodigo {
   id: string;
   nombre: string;
@@ -30,7 +30,7 @@ interface SalaPorCodigo {
 
 interface LobbyProps {
   onCrearSala: () => void;
-  // Devuelve null si se entró a la sala, o el mensaje de error a mostrar.
+  // null si entro, o el mensaje de error
   onUnirseASala: (id: string, info: InfoSala) => Promise<string | null>;
   onVolver?: () => void;
 }
@@ -40,30 +40,24 @@ function Lobby({ onCrearSala, onUnirseASala, onVolver }: LobbyProps) {
   const [salaSeleccionada, setSalaSeleccionada] = useState<string | null>(null);
   const [listado, setListado] = useState<RoomAvailable<MetadataSala>[]>([]);
   const [conexion, setConexion] = useState<EstadoConexion>("conectando");
-  // id de la sala a la que se está entrando, para bloquear clics repetidos.
+  // Sala en la que se esta entrando, para bloquear clics repetidos
   const [uniendo, setUniendo] = useState<string | null>(null);
   const [errorGeneral, setErrorGeneral] = useState<string | null>(null);
 
-  // Diálogo del código de acceso.
   const [salaPorCodigo, setSalaPorCodigo] = useState<SalaPorCodigo | null>(null);
   const [codigoAcceso, setCodigoAcceso] = useState("");
   const [errorCodigo, setErrorCodigo] = useState<string | null>(null);
 
   useEffect(() => {
-    // Nos unimos a la LobbyRoom del backend, que envía el listado completo al
-    // entrar ("rooms") y luego avisa cada vez que una sala aparece o cambia
-    // ("+") o se elimina ("-").
-    // Ojo: no filtramos por metadata en el servidor porque, al cambiar el
-    // estado a "EN JUEGO", la LobbyRoom no envía "-" (compara la sala con
-    // ella misma). Sí envía "+" con los datos nuevos, así que filtramos aquí.
+    // Se escucha la LobbyRoom: manda el listado al entrar ("rooms") y luego "+" y "-".
+    // Se filtra aqui y no en el servidor porque al pasar a EN JUEGO no llega "-", solo "+".
     let cancelado = false;
     let salaLobby: Awaited<ReturnType<typeof client.joinOrCreate>> | null = null;
 
     client
       .joinOrCreate("lobby", { filter: { name: "catan" } })
       .then((sala) => {
-        // En modo estricto React monta, desmonta y vuelve a montar el
-        // componente; si ya nos desmontaron, salimos de inmediato.
+        // React monta dos veces en modo estricto
         if (cancelado) {
           sala.leave();
           return;
@@ -124,7 +118,7 @@ function Lobby({ onCrearSala, onUnirseASala, onVolver }: LobbyProps) {
     if (uniendo) return;
     const sala = todasLasSalas.find((s) => s.id === id);
 
-    // Las privadas piden el código antes de intentar entrar.
+    // Las privadas piden el codigo primero
     if (sala?.tipo === "privada") {
       abrirDialogo({ id, nombre: sala.nombre });
       return;
@@ -133,12 +127,10 @@ function Lobby({ onCrearSala, onUnirseASala, onVolver }: LobbyProps) {
     setUniendo(id);
     setErrorGeneral(null);
     const error = await onUnirseASala(id, { alias: sala?.nombre ?? "", privada: false });
-    // Sin error Navegacion ya cambió de pantalla y este componente no existe.
     if (!error) return;
     setUniendo(null);
 
-    // Una sala escrita a mano que no está en el listado puede ser privada:
-    // el backend la rechaza y entonces sí pedimos el código.
+    // Una sala escrita a mano puede ser privada: si el backend la rechaza, se pide el codigo
     if (error === ERROR_CODIGO_INCORRECTO) {
       abrirDialogo({ id, nombre: sala?.nombre ?? "" }, "Esta sala es privada: escribe su código de acceso.");
     } else {
@@ -302,7 +294,6 @@ function Lobby({ onCrearSala, onUnirseASala, onVolver }: LobbyProps) {
         </Button>
       </div>
 
-      {/* Dialog ya cierra con Escape y al hacer clic fuera (llama a onClose). */}
       <Dialog
         open={salaPorCodigo !== null}
         onClose={cerrarDialogo}

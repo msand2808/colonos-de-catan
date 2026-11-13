@@ -5,8 +5,7 @@ import DialogContent from '@mui/material/DialogContent';
 import DialogContentText from '@mui/material/DialogContentText';
 import DialogTitle from '@mui/material/DialogTitle';
 
-/* Confirmacion antes de pasar el turno, para no pasarlo sin querer.
-   Si se cancela no se envia nada al servidor. */
+/* Confirmar antes de pasar el turno; si se cancela no se envia nada */
 
 interface Props {
   abierto: boolean;

@@ -45,9 +45,7 @@ interface EstadoDeSala {
 
 type Vista = "reconectando" | "inicio" | "nombre" | "elegir" | "lobby" | "crear";
 
-// En modo estricto React ejecuta los efectos dos veces al montar. Guardamos la
-// promesa para que las dos ejecuciones esperen el mismo intento de reconexión
-// en lugar de gastar el token dos veces.
+// En modo estricto los efectos corren dos veces: se guarda la promesa para no gastar el token dos veces
 let reconexionEnCurso: Promise<Room> | null = null;
 
 function reconectarUnaVez(token: string): Promise<Room> {
@@ -55,11 +53,10 @@ function reconectarUnaVez(token: string): Promise<Room> {
   return reconexionEnCurso;
 }
 
-// Traduce los errores del matchmaking de Colyseus a mensajes para el jugador.
+// Errores del matchmaking a mensajes para el jugador
 function mensajeDeError(error: unknown, accion: "crear" | "unirse"): string {
   const texto = error instanceof Error ? error.message : String(error ?? "");
 
-  // CatanRoom.onJoin lanza "Codigo de acceso incorrecto".
   if (/c[oó]digo de acceso/i.test(texto)) return ERROR_CODIGO_INCORRECTO;
   if (/locked|full|not found|no rooms found/i.test(texto)) {
     return "La sala ya no está disponible: puede que esté llena o que haya cerrado.";
@@ -71,29 +68,25 @@ function mensajeDeError(error: unknown, accion: "crear" | "unirse"): string {
 }
 
 function Navegacion() {
-  // Si hay un token guardado, lo primero es intentar volver a esa sala.
+  // Si hay token guardado, primero se intenta volver a esa sala
   const [vista, setVista] = useState<Vista>(() => (leerSesion() ? "reconectando" : "inicio"));
-  // El nombre se guarda en sessionStorage; tras una reconexión también se
-  // recupera del estado de la sala.
   const [nombreJugador, setNombreJugador] = useState(leerNombreJugador);
   const [room, setRoom] = useState<Room | null>(null);
   const [infoSala, setInfoSala] = useState<InfoSala | null>(null);
   const [jugadores, setJugadores] = useState<JugadorVista[]>([]);
   const [fase, setFase] = useState<number>(FASE_PARTIDA.LOBBY);
   const [creador, setCreador] = useState("");
-  // Desde dónde se abrió "Crear sala", para que Volver regrese ahí.
+  // Desde donde se abrio "Crear sala", para que Volver regrese ahi
   const [origenCrear, setOrigenCrear] = useState<"elegir" | "lobby">("elegir");
-  // Distingue "Salir" (voluntario) de una caída que no se pudo recuperar.
+  // "Salir" voluntario o caida que no se pudo recuperar
   const salidaVoluntaria = useRef(false);
-  // Último error del servidor que se muestra como aviso.
   const [avisoError, setAvisoError] = useState<Aviso | null>(null);
 
-  // La partida empieza cuando el backend deja de estar en LOBBY (lo cambia
-  // msgIniciarPartida), así todos los clientes avanzan a la vez.
+  // La partida empieza cuando el backend sale de LOBBY, asi todos avanzan a la vez
   const partidaIniciada = fase !== FASE_PARTIDA.LOBBY;
   const esCreador = room !== null && creador === room.sessionId;
 
-  // Reconexión al cargar la página.
+  // Reconexion al cargar la pagina
   useEffect(() => {
     const sesion = leerSesion();
     if (!sesion) return;
@@ -109,8 +102,7 @@ function Navegacion() {
         });
       })
       .catch((error) => {
-        // Pasaron más de 30 segundos, la sala cerró o el servidor no responde:
-        // el token ya no sirve, se borra y se empieza desde el inicio.
+        // Paso el tiempo o la sala cerro: el token ya no sirve
         console.warn("No se pudo reconectar:", error);
         borrarSesion();
         if (!cancelado) setVista("inicio");
@@ -134,7 +126,6 @@ function Navegacion() {
       const listaJugadores: JugadorVista[] = [];
       state.jugadores.forEach((jugador, sessionId) => {
         const esUsuarioActual = sessionId === salaActual.sessionId;
-        // Tras recargar la pestaña el nombre ya no está en memoria.
         if (esUsuarioActual && jugador.nombre) {
           setNombreJugador((actual) => actual || jugador.nombre);
         }
@@ -152,13 +143,11 @@ function Navegacion() {
     }
 
     function alReconectar() {
-      // El servidor manda un token nuevo en cada reconexión automática.
       actualizarToken(salaActual.reconnectionToken);
     }
 
     function alSalir() {
-      // Se dispara al salir con el botón o cuando la conexión no se pudo
-      // recuperar. En ambos casos el token ya no sirve.
+      // Al salir o si no se pudo recuperar, el token ya no sirve
       borrarSesion();
       setRoom(null);
       setInfoSala(null);
@@ -193,14 +182,13 @@ function Navegacion() {
     setRoom(sala);
   }
 
-  // Devuelve null si todo salió bien, o el mensaje de error para la pantalla.
+  // null si salio bien, o el mensaje de error
   async function crearSala(datos: DatosNuevaSala): Promise<string | null> {
     try {
       const nuevaSala = await client.create("catan", {
         nombre: nombreJugador,
         alias: datos.alias,
         privada: datos.privada,
-        // El creador también pasa por onJoin, que compara este código.
         codigoAcceso: datos.privada ? datos.codigoAcceso : "",
       });
       entrarASala(nuevaSala, datos);
@@ -227,11 +215,10 @@ function Navegacion() {
 
   function salirDeSala() {
     if (!room) return;
-    // Se borra antes de salir: si la pestaña se recarga justo ahora, no debe
-    // devolvernos a una sala que ya abandonamos.
+    // Se borra antes de salir por si la pestaña se recarga justo ahora
     borrarSesion();
     salidaVoluntaria.current = true;
-    // consented = true: el servidor no guarda el asiento para reconectar.
+    // consented = true: el servidor no guarda el asiento
     if(room.connection?.isOpen){
       room.leave(true);
     }else{

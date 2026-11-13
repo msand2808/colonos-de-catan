@@ -11,8 +11,7 @@ describe("bots en el juego: su turno", () => {
     before(async () => colyseus = await servidorDePrueba());
     beforeEach(async () => colyseus.cleanup());
 
-    //* Sala en juego (Ana, Beto y el bot) donde es el turno del bot. El bot
-    //* tiene un poblado en 0,0,0 y un camino en 0,0,1; la pausa es 0
+    //* Sala en juego donde es el turno del bot, con un poblado en 0,0,0 y un camino en 0,0,1
     async function prepararTurnoBot(faseJuego: FaseJuego = FaseJuego.ACCIONES) {
         const { room, ana, beto } = await prepararJuego(colyseus, faseJuego);
         room.pausaBot = 0;

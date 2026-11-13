@@ -1,5 +1,4 @@
-//* Costo en recursos de cada cosa que se puede comprar. Debe coincidir con
-//* lo que cobran construirCiudad, construirAsentamiento, construirCaminos y comprarCarta
+//* Costo de cada cosa comprable; debe coincidir con construirCiudad, construirAsentamiento, construirCaminos y comprarCarta
 export type Costo = Record<string, number>;
 
 export const COSTOS: { nombre: string, costo: Costo }[] = [

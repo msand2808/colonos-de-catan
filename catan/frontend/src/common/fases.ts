@@ -1,10 +1,4 @@
-/*
- * Copiado de backend/src/common/enums.ts.
- *
- * El backend publica estos valores como números mediante Colyseus, pero sus
- * enums TypeScript no llegan al navegador. Si se modifican las fases en el
- * backend, actualiza este archivo para mantener ambos lados sincronizados.
- */
+// Copiado de backend/src/common/enums.ts. Si cambian alli, actualizar aqui.
 
 // Estado general de la partida.
 export const FASE_PARTIDA = {

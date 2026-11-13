@@ -14,10 +14,8 @@ interface Props{
 function ElegirRobo({abierto, jugadoresParaRobar, jugadores, enviando, onRobar}: Props){
     return (
         <Dialog open={abierto} fullWidth maxWidth="xs" aria-labelledby="robar-titulo">
-            {/*Titulo del modal*/}
             <DialogTitle id="robar-titulo">¿A quién quieres robar?</DialogTitle>
 
-            {/*Cuerpo del modal*/}
             <DialogContent>
                 <Typography color="text.secondary">
                     Se le quitará un recurso al azar.

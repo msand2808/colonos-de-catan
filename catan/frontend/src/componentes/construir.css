@@ -1,7 +1,5 @@
-/* Panel de construir. Cuatro botones con los iconos de las piezas.
-   Punteado y gris significa que no se puede; solido y oscuro que si.
-   Las reglas de color de aqui no tinen texto: el icono usa currentColor,
-   asi que con cambiar color se repinta el dibujo entero. */
+/* Panel de construir. Punteado y gris = no se puede; solido y oscuro = si.
+   El icono usa currentColor, asi que cambiar color repinta el dibujo. */
 .cnMarco {
     font-size: clamp(7px, 3.7cqw, 14px);
     height: 100%;
@@ -89,7 +87,7 @@
 .cnInstruccion { margin: 0; color: #276c86; font-size: .8125rem; }
 @media (max-width: 640px) { .cnRejilla { grid-template-columns: 1fr; } }
 
-/* Modo oscuro: mismo dibujo, con fondos oscuros y el teal mas claro para que se lea */
+/* Modo oscuro */
 :root[data-theme="oscuro"] .cnMarco { border-color: #3a4a4f; background: var(--bs-body-bg); }
 :root[data-theme="oscuro"] .cnTitulo { color: #cfe6ea; }
 :root[data-theme="oscuro"] .cnEstado,

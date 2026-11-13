@@ -19,8 +19,7 @@ export function puntosNumero(numero: number): number {
     return PUNTOS_NUMERO[numero] ?? 0;
 }
 
-//* Suma de puntos de los hexagonos que toca el vertice. Mismos hexagonos que
-//* en darMaterialInicial
+//* Suma de puntos de los hexagonos que toca el vertice (igual que darMaterialInicial)
 export function puntosVertice(
     hexagonos: MapSchema<Hexagono>,
     h: number,
@@ -37,7 +36,7 @@ export function puntosVertice(
     }, 0);
 }
 
-//* Todos los vertices, del mejor al peor. Los empates quedan en orden aleatorio
+//* Todos los vertices, del mejor al peor
 export function ordenarVerticesPorPuntos(
     vertices: MapSchema<Vertice>,
     hexagonos: MapSchema<Hexagono>
@@ -47,14 +46,13 @@ export function ordenarVerticesPorPuntos(
     return lista.sort((a, b) => puntos.get(b)! - puntos.get(a)!);
 }
 
-//* Aristas pegadas al vertice, las mismas que acepta comprobarCaminoPreconstruccion
+//* Aristas pegadas al vertice
 export function aristasDelVertice(h: number, d: number, p: number): string[] {
     if (p === 0) return [`${h},${d},0`, `${h},${d},1`, `${h + 1},${d - 1},2`];
     return [`${h},${d},1`, `${h},${d},2`, `${h - 1},${d},0`];
 }
 
-//* Todas las aristas, primero las que llevan a la mejor esquina libre (donde
-//* despues podria ir un poblado). Los empates quedan en orden aleatorio
+//* Todas las aristas, primero las que llevan a la mejor esquina libre
 export function ordenarAristasPorPuntos(
     aristas: MapSchema<Arista>,
     vertices: MapSchema<Vertice>,

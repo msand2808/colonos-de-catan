@@ -15,7 +15,7 @@ export class Jugador extends Schema {
     @type("string") ultimoAsentamiento: string;
     @type("uint8") caballerosJugados: number;
     @type("boolean") esBot: boolean;
-    //* Se asigna al entrar a la sala y no cambia aunque se mezcle el orden de turnos
+    //* Se asigna al entrar a la sala
     @type("string") color: string;
 
 

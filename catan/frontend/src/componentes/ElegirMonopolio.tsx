@@ -12,9 +12,6 @@ import Select from '@mui/material/Select';
 import Stack from '@mui/material/Stack';
 import { RECURSOS, type Recurso, type Recursos } from '../common/jugador';
 
-/* Mismo diseno que ElegirAbundancia.tsx e intercambioBanca.tsx (Dialog con
-   Select), pero con un solo recurso: todos los demas jugadores le dan al que
-   juega la carta todo lo que tengan de ese recurso. */
 
 interface Props {
   abierto: boolean;

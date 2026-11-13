@@ -10,8 +10,7 @@ import { Construccion } from "../src/common/enums.js";
 const ANA = "ana";
 const BETO = "beto";
 
-//* Aristas alrededor del hexagono (0,0), en orden. Cada una une dos esquinas:
-//* A-B, B-C, C-D, D-E, E-F y F-A
+//* Aristas alrededor del hexagono (0,0) en orden: A-B, B-C, C-D, D-E, E-F y F-A
 const ANILLO = ["0,0,1", "0,0,2", "-1,1,0", "0,1,1", "1,0,2", "0,0,0"];
 
 //* Esquinas del hexagono (0,0)
@@ -32,7 +31,6 @@ describe("calcularCaminoMasLargo", () => {
         generarAristas(aristas);
     });
 
-    //* Helpers para preparar el tablero
     function ponerCaminos(claves: string[], propietario: string) {
         claves.forEach((clave) => aristas.get(clave).setPropietario(propietario));
     }
