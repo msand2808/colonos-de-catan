@@ -21,7 +21,7 @@ function ResponderIntercambio({ oferta, nombreOferente, misRecursos, enviando, o
     const alcanza = tengo >= oferta.cantidadSolicitada;
 
     return (
-        <div className="h-100 w-100 d-flex flex-column border rounded bg-white overflow-hidden">
+        <div className="h-100 w-100 d-flex flex-column border rounded bg-body overflow-hidden">
             <h3 className="text-center fs-6 fw-bold border-bottom mb-0 py-1">Negociar</h3>
 
             <div className="flex-fill d-flex flex-column justify-content-center gap-2 p-2 text-center">
