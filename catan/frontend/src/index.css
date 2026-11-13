@@ -1,2 +1,17 @@
 /* La aplicación usa toda el área disponible del navegador. */
 html, body, #root {  width: 100%; height: 100%; margin: 0;}
+
+/* Si el sistema pide reducir el movimiento no se anima nada, tampoco en la
+   partida ni en los componentes de MUI. Las animaciones duran casi cero en
+   vez de quitarse, para que se vea el estado final y sigan llegando los
+   eventos animationend y transitionend que usan algunos componentes. */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}
