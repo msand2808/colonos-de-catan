@@ -1,5 +1,4 @@
-// Se usa sessionStorage (igual que sesionGuardada.ts) para que el nombre
-// sobreviva a una recarga y cada pestaña siga siendo un jugador distinto.
+// sessionStorage, como sesionGuardada.ts: cada pestaña es un jugador distinto
 const CLAVE = "catan:nombre";
 
 export function leerNombreJugador(): string {
@@ -14,14 +13,14 @@ export function guardarNombreJugador(nombre: string) {
   try {
     sessionStorage.setItem(CLAVE, nombre);
   } catch {
-    // Sin almacenamiento se vuelve a pedir el nombre al recargar.
+    // sin almacenamiento se pide de nuevo
   }
 }
 
 export const LARGO_MINIMO_NOMBRE = 2;
 export const LARGO_MAXIMO_NOMBRE = 20;
 
-// Devuelve el mensaje de error, o null si el nombre es válido.
+// Mensaje de error, o null si el nombre es valido
 export function validarNombreJugador(nombre: string): string | null {
   const limpio = nombre.trim();
 
@@ -34,4 +33,11 @@ export function validarNombreJugador(nombre: string): string | null {
   }
 
   return null;
+}
+
+// Iniciales para el hexágono de la vista previa: las dos primeras letras del
+// nombre ya recortado, o "?" si todavía no escribió nada.
+export function inicialesNombre(nombre: string): string {
+  const limpio = nombre.trim();
+  return limpio ? limpio.slice(0, 2).toUpperCase() : "?";
 }

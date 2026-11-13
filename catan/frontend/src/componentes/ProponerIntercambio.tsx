@@ -39,7 +39,7 @@ function ProponerIntercambio({ children, ofertaActiva, jugadores, misRecursos, p
     const [recibido, setRecibido] = useState<Recurso | ''>('');
     const [cantidadRecibida, setCantidadRecibida] = useState(1);
 
-    // Solo se puede ofrecer un recurso que se tenga, y hasta la cantidad que se tiene.
+    // Solo se ofrece lo que se tiene, hasta la cantidad que se tiene
     const recursosQueTengo = RECURSOS.filter((r) => (misRecursos?.[r] ?? 0) > 0);
     const maximoDar = entregado ? (misRecursos?.[entregado] ?? 0) : 0;
     const valida = entregado !== '' && recibido !== '' && entregado !== recibido
@@ -60,7 +60,7 @@ function ProponerIntercambio({ children, ofertaActiva, jugadores, misRecursos, p
     }
 
     return (
-        <div className="h-100 w-100 d-flex flex-column border rounded bg-white overflow-hidden">
+        <div className="h-100 w-100 d-flex flex-column border rounded bg-body overflow-hidden">
             <h3 className="text-center fs-6 fw-bold border-bottom mb-0 py-1">Negociar</h3>
 
             <div className="flex-fill d-flex flex-column justify-content-center gap-2 p-2 text-center">
@@ -83,10 +83,8 @@ function ProponerIntercambio({ children, ofertaActiva, jugadores, misRecursos, p
             </div>
 
             <Dialog open={abierto} onClose={() => setAbierto(false)} fullWidth maxWidth="xs" aria-labelledby="proponer-titulo">
-                {/*Titulo del modal*/}
                 <DialogTitle id="proponer-titulo">Proponer intercambio</DialogTitle>
 
-                {/*Cuerpo del modal*/}
                 <DialogContent>
                     <Typography color="text.secondary">
                         Indica qué recurso das y cuál pides. Los demás jugadores verán la propuesta.

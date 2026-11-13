@@ -2,8 +2,7 @@ import type { ConstruccionesDisponibles, Recursos } from '../common/jugador';
 import { estadoOpcion, type EstadoOpcion } from '../common/construccion';
 import './construir.css';
 
-// Estos nombres se envían al backend. No usamos las etiquetas visibles para
-// evitar que un cambio de texto rompa el protocolo entre cliente y servidor.
+// Estos nombres se mandan al backend, por eso no se usan las etiquetas visibles
 export type TipoConstruccion = 'camino' | 'poblado' | 'ciudad';
 
 export interface ObjetivoConstruccion {
@@ -48,8 +47,7 @@ interface Props {
   onSeleccionar: (tipo: TipoConstruccion | null) => void;
 }
 
-// El botón se desactiva antes de seleccionar, pero el servidor vuelve a
-// comprobar los recursos y las piezas para evitar que el cliente los falsifique.
+// El boton se desactiva antes, pero el servidor vuelve a comprobar
 function Construir({
   recursos, piezas = PIEZAS_INICIALES, esMiTurno, puedeConstruir, tipoPermitido = null, seleccion, onSeleccionar,
 }: Props) {

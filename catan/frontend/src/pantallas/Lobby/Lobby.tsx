@@ -11,55 +11,26 @@ import Dialog from "@mui/material/Dialog";
 import DialogActions from "@mui/material/DialogActions";
 import DialogContent from "@mui/material/DialogContent";
 import DialogTitle from "@mui/material/DialogTitle";
-import LinearProgress from "@mui/material/LinearProgress";
 import TextField from "@mui/material/TextField";
 import type { Theme } from "@mui/material/styles";
 import Typography from "@mui/material/Typography";
+import Marco from "../../componentes/Marco/Marco";
 import { client } from "../colyseusClient";
 import type { InfoSala } from "../sesionGuardada";
 import { ERROR_CODIGO_INCORRECTO, LARGO_MAXIMO_CODIGO, validarCodigoAcceso } from "../validacionSala";
-
-export type SalaTipo = "publica" | "privada";
-
-export interface SalaDisponible {
-  id: string;
-  nombre: string;
-  tipo: SalaTipo;
-  jugadores: number;
-  maxJugadores: number;
-  anfitrion: string;
-}
-
-// Metadata que CatanRoom publica con setMetadata (ver onCreate en el backend).
-interface MetadataSala {
-  alias?: string;
-  estado?: string;
-  privada?: boolean;
-  anfitrion?: string;
-}
+import { salaDesdeListado, salasDisponibles, type MetadataSala, type SalaDisponible } from "../salas";
 
 type EstadoConexion = "conectando" | "conectado" | "error";
 
-// Sala a la que se le está pidiendo el código de acceso.
+// Sala que pide codigo de acceso
 interface SalaPorCodigo {
   id: string;
   nombre: string;
 }
 
-function salaDesdeListado(sala: RoomAvailable<MetadataSala>): SalaDisponible {
-  return {
-    id: sala.roomId,
-    nombre: sala.metadata?.alias || "Catan Room",
-    tipo: sala.metadata?.privada ? "privada" : "publica",
-    jugadores: sala.clients,
-    maxJugadores: sala.maxClients,
-    anfitrion: sala.metadata?.anfitrion || "",
-  };
-}
-
 interface LobbyProps {
   onCrearSala: () => void;
-  // Devuelve null si se entró a la sala, o el mensaje de error a mostrar.
+  // null si entro, o el mensaje de error
   onUnirseASala: (id: string, info: InfoSala) => Promise<string | null>;
   onVolver?: () => void;
 }
@@ -69,30 +40,24 @@ function Lobby({ onCrearSala, onUnirseASala, onVolver }: LobbyProps) {
   const [salaSeleccionada, setSalaSeleccionada] = useState<string | null>(null);
   const [listado, setListado] = useState<RoomAvailable<MetadataSala>[]>([]);
   const [conexion, setConexion] = useState<EstadoConexion>("conectando");
-  // id de la sala a la que se está entrando, para bloquear clics repetidos.
+  // Sala en la que se esta entrando, para bloquear clics repetidos
   const [uniendo, setUniendo] = useState<string | null>(null);
   const [errorGeneral, setErrorGeneral] = useState<string | null>(null);
 
-  // Diálogo del código de acceso.
   const [salaPorCodigo, setSalaPorCodigo] = useState<SalaPorCodigo | null>(null);
   const [codigoAcceso, setCodigoAcceso] = useState("");
   const [errorCodigo, setErrorCodigo] = useState<string | null>(null);
 
   useEffect(() => {
-    // Nos unimos a la LobbyRoom del backend, que envía el listado completo al
-    // entrar ("rooms") y luego avisa cada vez que una sala aparece o cambia
-    // ("+") o se elimina ("-").
-    // Ojo: no filtramos por metadata en el servidor porque, al cambiar el
-    // estado a "EN JUEGO", la LobbyRoom no envía "-" (compara la sala con
-    // ella misma). Sí envía "+" con los datos nuevos, así que filtramos aquí.
+    // Se escucha la LobbyRoom: manda el listado al entrar ("rooms") y luego "+" y "-".
+    // Se filtra aqui y no en el servidor porque al pasar a EN JUEGO no llega "-", solo "+".
     let cancelado = false;
     let salaLobby: Awaited<ReturnType<typeof client.joinOrCreate>> | null = null;
 
     client
       .joinOrCreate("lobby", { filter: { name: "catan" } })
       .then((sala) => {
-        // En modo estricto React monta, desmonta y vuelve a montar el
-        // componente; si ya nos desmontaron, salimos de inmediato.
+        // React monta dos veces en modo estricto
         if (cancelado) {
           sala.leave();
           return;
@@ -130,9 +95,7 @@ function Lobby({ onCrearSala, onUnirseASala, onVolver }: LobbyProps) {
   const todasLasSalas = listado.map(salaDesdeListado);
 
   // Solo mostramos salas que todavía esperan jugadores.
-  const salas: SalaDisponible[] = listado
-    .filter((sala) => sala.metadata?.estado === "EN LOBBY" && sala.clients < sala.maxClients)
-    .map(salaDesdeListado);
+  const salas: SalaDisponible[] = salasDisponibles(listado);
 
   function seleccionarSala(sala: SalaDisponible) {
     setSalaSeleccionada(sala.id);
@@ -155,7 +118,7 @@ function Lobby({ onCrearSala, onUnirseASala, onVolver }: LobbyProps) {
     if (uniendo) return;
     const sala = todasLasSalas.find((s) => s.id === id);
 
-    // Las privadas piden el código antes de intentar entrar.
+    // Las privadas piden el codigo primero
     if (sala?.tipo === "privada") {
       abrirDialogo({ id, nombre: sala.nombre });
       return;
@@ -164,12 +127,10 @@ function Lobby({ onCrearSala, onUnirseASala, onVolver }: LobbyProps) {
     setUniendo(id);
     setErrorGeneral(null);
     const error = await onUnirseASala(id, { alias: sala?.nombre ?? "", privada: false });
-    // Sin error Navegacion ya cambió de pantalla y este componente no existe.
     if (!error) return;
     setUniendo(null);
 
-    // Una sala escrita a mano que no está en el listado puede ser privada:
-    // el backend la rechaza y entonces sí pedimos el código.
+    // Una sala escrita a mano puede ser privada: si el backend la rechaza, se pide el codigo
     if (error === ERROR_CODIGO_INCORRECTO) {
       abrirDialogo({ id, nombre: sala?.nombre ?? "" }, "Esta sala es privada: escribe su código de acceso.");
     } else {
@@ -205,15 +166,9 @@ function Lobby({ onCrearSala, onUnirseASala, onVolver }: LobbyProps) {
   }
 
   return (
-    <div className="bg-info-subtle min-vh-100 px-3 py-4">
+    <Marco onVolver={onVolver}>
       <div className="mx-auto d-flex flex-column align-items-start lobby__contenido">
-        {onVolver && (
-          <Button variant="text" onClick={onVolver}>
-            ← Volver
-          </Button>
-        )}
-
-        <header className="mt-4 mb-4">
+        <header className="mb-4">
           <Typography variant="h4" component="h1" gutterBottom>
             Puerto de partidas
           </Typography>
@@ -287,22 +242,15 @@ function Lobby({ onCrearSala, onUnirseASala, onVolver }: LobbyProps) {
             <ul className="row g-3 list-unstyled mb-4">
               {salas.map((sala) => (
                 <li key={sala.id} className="col-12 col-md-6">
-                  {/* Franja de color a la izquierda: verde si es pública, roja si es privada.
-                      La sala seleccionada se marca con un contorno celeste. */}
-                  <Card
-                    variant="outlined"
-                    className="h-100"
+                  {/* Tarjeta de pergamino (tema.css). La sala seleccionada se marca con un contorno. */}
+                  <div
+                    className="tema-pergamino h-100 p-3 d-flex flex-column flex-sm-row align-items-sm-center gap-3"
                     onClick={() => seleccionarSala(sala)}
-                    sx={{
+                    style={{
                       cursor: "pointer",
-                      borderLeft: 6,
-                      borderLeftColor: sala.tipo === "publica" ? "success.main" : "error.main",
-                      outline: salaSeleccionada === sala.id ? 3 : 0,
-                      outlineStyle: "solid",
-                      outlineColor: "info.main",
+                      outline: salaSeleccionada === sala.id ? "3px solid var(--teal)" : "none",
                     }}
                   >
-                    <CardContent className="d-flex flex-column flex-sm-row align-items-sm-center gap-3">
                       <div className="d-flex flex-column gap-1 flex-grow-1 text-truncate">
                         <div className="d-flex align-items-center gap-2">
                           <Typography variant="h6" component="span" noWrap>
@@ -315,24 +263,12 @@ function Lobby({ onCrearSala, onUnirseASala, onVolver }: LobbyProps) {
                             size="small"
                           />
                         </div>
-                        <small className="text-body-secondary">
+                        <small>
                           {sala.anfitrion ? `Anfitrión: ${sala.anfitrion}` : "Sin anfitrión"}
                         </small>
-                        <div
-                          className="d-flex align-items-center gap-2"
-                          aria-label={`${sala.jugadores} de ${sala.maxJugadores} jugadores`}
-                        >
-                          <LinearProgress
-                            variant="determinate"
-                            color="info"
-                            value={(sala.jugadores / sala.maxJugadores) * 100}
-                            className="flex-grow-1 rounded"
-                            aria-hidden="true"
-                          />
-                          <small className="fw-bold text-body-secondary" aria-hidden="true">
-                            {sala.jugadores}/{sala.maxJugadores}
-                          </small>
-                        </div>
+                        <small className="fw-bold" aria-label={`${sala.jugadores} de ${sala.maxJugadores} jugadores`}>
+                          👥 {sala.jugadores}/{sala.maxJugadores}
+                        </small>
                       </div>
 
                       <Button
@@ -346,8 +282,7 @@ function Lobby({ onCrearSala, onUnirseASala, onVolver }: LobbyProps) {
                       >
                         {uniendo === sala.id ? "Entrando…" : sala.tipo === "privada" ? "🔑 Unirse" : "Unirse"}
                       </Button>
-                    </CardContent>
-                  </Card>
+                  </div>
                 </li>
               ))}
             </ul>
@@ -359,7 +294,6 @@ function Lobby({ onCrearSala, onUnirseASala, onVolver }: LobbyProps) {
         </Button>
       </div>
 
-      {/* Dialog ya cierra con Escape y al hacer clic fuera (llama a onClose). */}
       <Dialog
         open={salaPorCodigo !== null}
         onClose={cerrarDialogo}
@@ -424,7 +358,7 @@ function Lobby({ onCrearSala, onUnirseASala, onVolver }: LobbyProps) {
           </DialogActions>
         </form>
       </Dialog>
-    </div>
+    </Marco>
   );
 }
 

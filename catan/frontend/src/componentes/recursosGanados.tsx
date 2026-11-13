@@ -1,4 +1,5 @@
 import type { CSSProperties } from 'react';
+import { createPortal } from 'react-dom';
 import type { Recurso } from '../common/jugador';
 import { DURACION_VUELO, type VueloRecurso } from '../common/dados';
 import './recursosGanados.css';
@@ -21,7 +22,9 @@ function RecursosGanados({ vuelos }: Props) {
   // La capa cubre toda la pantalla: solo existe mientras hay algo volando
   if (vuelos.length === 0) return null;
 
-  return (
+  /* Se dibuja en el body, fuera de la cuadricula de la partida: Partida.css le
+     pone fondo a todos los div de la cuadricula y taparia la pantalla. */
+  return createPortal(
     <div className="rgCapa" aria-hidden="true">
       {vuelos.map((vuelo) => (
         <img
@@ -39,7 +42,8 @@ function RecursosGanados({ vuelos }: Props) {
           } as CSSProperties}
         />
       ))}
-    </div>
+    </div>,
+    document.body,
   );
 }
 

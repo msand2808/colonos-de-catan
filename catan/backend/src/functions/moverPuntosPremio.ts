@@ -4,8 +4,7 @@ import { Jugador } from "../schemas/Jugador.js";
 //* Puntos que vale una carta especial (Ejercito mas grande o Camino mas largo)
 export const PUNTOS_PREMIO = 2;
 
-//* Pasar los puntos de una carta especial de un jugador a otro.
-//* Si alguno de los dos no existe (nadie la tenia o nadie la recibe), se omite.
+//* Pasar los puntos de una carta especial de un jugador a otro (se omite si alguno no existe)
 export function moverPuntosPremio(
     jugadores: MapSchema<Jugador>,
     anterior: string,

@@ -3,16 +3,14 @@ export const LARGO_MAXIMO_ALIAS = 20;
 export const LARGO_MINIMO_CODIGO = 4;
 export const LARGO_MAXIMO_CODIGO = 8;
 
-// Navegacion devuelve este texto cuando el backend rechaza el código;
-// Lobby lo reconoce para pedirlo (o volver a pedirlo).
+// Navegacion lo devuelve cuando el backend rechaza el codigo; Lobby lo usa para pedirlo
 export const ERROR_CODIGO_INCORRECTO = "El código de acceso es incorrecto.";
 
 // \p{L} acepta letras con tilde y la ñ, \p{N} los dígitos.
 const SOLO_LETRAS_NUMEROS_ESPACIOS = /^[\p{L}\p{N} ]+$/u;
 const SOLO_LETRAS_NUMEROS = /^[\p{L}\p{N}]+$/u;
 
-// Devuelve el mensaje de error, o null si el alias es válido.
-// El alias se valida ya recortado: los espacios de los extremos no cuentan.
+// Mensaje de error, o null si el alias es valido (ya recortado)
 export function validarAlias(alias: string): string | null {
   const limpio = alias.trim();
 
@@ -30,7 +28,7 @@ export function validarAlias(alias: string): string | null {
   return null;
 }
 
-// Devuelve el mensaje de error, o null si el código es válido.
+// Mensaje de error, o null si el codigo es valido
 export function validarCodigoAcceso(codigo: string): string | null {
   if (!codigo) return "Escribe un código de acceso.";
   if (/\s/.test(codigo)) return "El código no puede tener espacios.";
@@ -45,9 +43,7 @@ export function validarCodigoAcceso(codigo: string): string | null {
   return null;
 }
 
-// Alias sugerido a partir del nombre del jugador. Si el nombre tiene
-// caracteres que el alias no admite, se quitan; si no queda algo válido,
-// se deja vacío para que el jugador lo escriba.
+// Alias sugerido a partir del nombre; vacio si no queda nada valido
 export function aliasSugerido(nombreJugador: string): string {
   const base = `Sala de ${nombreJugador}`
     .replace(/[^\p{L}\p{N} ]/gu, "")

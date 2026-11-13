@@ -6,9 +6,9 @@ export type MensajeRegistro = { jugador: string; mensaje: string };
 export type LineaRegistro = { tipo: 'chat' | 'log' } & MensajeRegistro;
 
 type Props = {
-  /* Ya convertidos a texto plano: esta lista es lo unico que se pinta. */
+  /* Ya en texto plano */
     registro: LineaRegistro[];
-  /* Sin sala no hay a donde enviar, asi que la caja se deshabilita. */
+  /* Sin sala se deshabilita la caja */
   onEnviar?: (texto: string) => void;
 };
 
@@ -16,7 +16,7 @@ function Chat({ registro, onEnviar }: Props) {
   const [texto, setTexto] = useState('');
   const finDeLista = useRef<HTMLDivElement>(null);
 
-  /* Sin esto la lista crece hacia abajo y lo ultimo queda fuera de vista. */
+  /* Para que lo ultimo quede a la vista */
   useEffect(() => { finDeLista.current?.scrollIntoView(); }, [registro]);
 
   const enviar = (evento: React.FormEvent) => {

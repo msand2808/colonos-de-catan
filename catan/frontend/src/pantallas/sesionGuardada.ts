@@ -1,16 +1,12 @@
-// Guarda lo necesario para volver a la sala si se recarga la pestaña.
-// Se usa sessionStorage (no localStorage) porque es propio de cada pestaña:
-// así dos pestañas abiertas siguen siendo dos jugadores distintos y una no
-// le "roba" el asiento a la otra al recargar.
+// Datos para volver a la sala al recargar. sessionStorage porque es de cada pestaña:
+// dos pestañas siguen siendo dos jugadores distintos.
 
 const CLAVE = "catan:sesion";
 
-// Datos de la sala que el cliente no puede leer del estado del servidor
-// (el alias y la privacidad viven en la metadata del listado).
+// Lo que el cliente no puede leer del estado (alias y privacidad vienen del listado)
 export interface InfoSala {
   alias: string;
   privada: boolean;
-  // Solo lo conoce quien creó la sala o quien entró escribiéndolo.
   codigoAcceso?: string;
 }
 
@@ -19,8 +15,7 @@ export interface SesionGuardada extends InfoSala {
   token: string;
 }
 
-// sessionStorage puede lanzar (modo privado, almacenamiento bloqueado):
-// en ese caso simplemente no hay reconexión, pero la app no se rompe.
+// Si el almacenamiento falla, solo se pierde la reconexion
 export function leerSesion(): SesionGuardada | null {
   try {
     const texto = sessionStorage.getItem(CLAVE);
@@ -42,11 +37,11 @@ export function guardarSesion(sesion: SesionGuardada) {
   try {
     sessionStorage.setItem(CLAVE, JSON.stringify(sesion));
   } catch {
-    // Sin almacenamiento no hay reconexión; el juego sigue funcionando.
+    // sin almacenamiento no hay reconexion
   }
 }
 
-// El servidor puede entregar un token nuevo tras una reconexión automática.
+// El servidor puede mandar un token nuevo al reconectar solo
 export function actualizarToken(token: string) {
   const actual = leerSesion();
   if (actual) guardarSesion({ ...actual, token });
@@ -56,6 +51,6 @@ export function borrarSesion() {
   try {
     sessionStorage.removeItem(CLAVE);
   } catch {
-    // Nada que limpiar.
+    // nada que borrar
   }
 }

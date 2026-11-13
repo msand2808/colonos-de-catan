@@ -1,14 +1,4 @@
-/* ==========================================================
-   TEMA DE LAS PANTALLAS PREVIAS A LA PARTIDA
-   Toma la paleta de la partida (componentes/*.css):
-   - pergamino #f7ecd6 con borde doble dorado #b89a5e (tabla de costes,
-     cartas, existencias) para tarjetas y paneles.
-   - mar #BFD8E8 del tablero como fondo de todas las pantallas.
-   - colores de terreno del tablero para acentos y avatares.
-   - teal #176977 / pizarra #2C4049 de los botones de construir.
-   Se importa una sola vez desde main.tsx, antes que el CSS de cada
-   pantalla, para que las pantallas puedan sobrescribir estas reglas.
-   ========================================================== */
+/* Tema de las pantallas previas a la partida. Paleta tomada de la partida (componentes/*.css). */
 
 :root {
   /* Mar (fondo) */
@@ -52,13 +42,12 @@
   --radio-sm: 8px;
   --radio-md: 12px;
   --radio-lg: 18px;
+
+  /* Curva de salida fuerte para transiciones de interfaz */
+  --ease-salida: cubic-bezier(0.23, 1, 0.32, 1);
 }
 
-/* ---------- Modo oscuro ----------
-   App.tsx pone data-theme="oscuro" en <html>. Se cambian solo los colores
-   de fondo y de texto: el mar de noche, el pergamino tostado y la tinta
-   clara. Los terrenos y los botones de color se quedan igual porque ya
-   tienen texto blanco encima. */
+/* Modo oscuro: App.tsx pone data-theme="oscuro" en <html> */
 :root[data-theme="oscuro"] {
   color-scheme: dark;
 
@@ -126,7 +115,7 @@
   background: rgba(46, 38, 25, 0.85);
 }
 
-/* ---------- Fondo: el mar alrededor de la isla ---------- */
+/* Fondo: el mar alrededor de la isla */
 .tema-fondo {
   position: relative;
   min-height: 100vh;
@@ -157,7 +146,7 @@
   color: var(--tinta);
 }
 
-/* ---------- Tarjeta de pergamino ---------- */
+/* Tarjeta de pergamino */
 .tema-pergamino {
   position: relative;
   background:
@@ -171,7 +160,7 @@
   color: var(--tinta);
 }
 
-/* ---------- Botones tipo ficha de madera (se hunden al pulsar) ---------- */
+/* Botones tipo ficha de madera */
 .tema-btn {
   --btn-fondo: var(--teal);
   --btn-borde: var(--teal-oscuro);
@@ -252,7 +241,7 @@
   width: 100%;
 }
 
-/* ---------- Botón Volver ---------- */
+/* Boton Volver */
 .tema-volver {
   display: inline-flex;
   align-items: center;
@@ -279,7 +268,7 @@
   outline-offset: 2px;
 }
 
-/* ---------- Campos de texto ---------- */
+/* Campos de texto */
 .tema-etiqueta {
   display: block;
   font-family: var(--fuente-titulo);
@@ -349,7 +338,7 @@
   border-radius: var(--radio-md);
 }
 
-/* ---------- Insignias ---------- */
+/* Insignias */
 .tema-insignia {
   display: inline-flex;
   align-items: center;
@@ -394,7 +383,7 @@
   text-shadow: 0 1px 0 rgba(0, 0, 0, 0.35);
 }
 
-/* ---------- Animaciones compartidas ---------- */
+/* Animaciones compartidas */
 @keyframes tema-flotar {
   0%, 100% { transform: translateY(0) rotate(var(--giro, 0deg)); }
   50% { transform: translateY(-10px) rotate(calc(var(--giro, 0deg) + 6deg)); }

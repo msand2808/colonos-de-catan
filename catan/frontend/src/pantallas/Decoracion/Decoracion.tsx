@@ -1,8 +1,6 @@
 import "./Decoracion.css";
 
-// Recursos del juego flotando sobre el mar, detrás del contenido.
-// Usa los mismos íconos que la partida (public/svg). Es solo decoración:
-// no se lee con lector de pantalla ni recibe clics.
+// Recursos flotando sobre el mar, solo decoracion
 const RECURSOS = [
   { icono: "madera", arriba: "12%", izquierda: "6%", tam: 46, giro: -12, retraso: 0 },
   { icono: "trigo", arriba: "70%", izquierda: "4%", tam: 40, giro: 10, retraso: 1.2 },

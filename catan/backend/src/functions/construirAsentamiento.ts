@@ -117,7 +117,7 @@ export function construirAsentamiento(
 
 
 
-//* Funcion para comprobar si el jugador tiene los recursos suficientes para construir un Asentamiento
+//* Comprobar si el jugador tiene los recursos para un asentamiento
 function comprobarRecursos(jugador: Jugador){
   if(jugador.recursos.get("madera") < 1) return false;
   if(jugador.recursos.get("ladrillo") < 1) return false;
@@ -126,7 +126,7 @@ function comprobarRecursos(jugador: Jugador){
   return true;
 }
 
-//* Funcion para eliminar recursos del jugador y asigna recursos a la banca
+//* Quitar recursos del jugador y pasarlos a la banca
 function eliminarRecursos(jugador:Jugador, banca:Banca){
     //* Eliminando recursos DEL JUGADOR
     jugador.recursos.set("madera", jugador.recursos.get("madera") - 1);

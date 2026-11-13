@@ -5,9 +5,13 @@ interface Props {
   sessionIdTurno: string;
   jugadores: Jugadores;
   ordenJugadores: string[];
+  // Es mi turno: se muestra el aviso grande con la fase.
+  esMiTurno: boolean;
+  // Lo que toca hacer ahora ("Lanzar dados", "Mover al ladrón"...). Puede ir vacio.
+  fase: string;
 }
 
-function InfoTurno({ sessionIdTurno, jugadores, ordenJugadores }: Props) {
+function InfoTurno({ sessionIdTurno, jugadores, ordenJugadores, esMiTurno, fase }: Props) {
   const lista = ordenJugadores.length > 0 ? ordenJugadores : Object.keys(jugadores);
   const nombre = jugadores[sessionIdTurno]?.nombre;
   // Los bots juegan solos: se avisa que esta jugando para que nadie lo espere
@@ -22,12 +26,18 @@ function InfoTurno({ sessionIdTurno, jugadores, ordenJugadores }: Props) {
       role="status"
       aria-live="polite"
     >
-      {esBot ? (
+      {esMiTurno ? (
+        <>
+          <span className="fw-bold text-truncate mw-100 px-2">¡Es tu turno!</span>
+          {fase && <span className="small text-truncate mw-100 px-2">{fase}</span>}
+        </>
+      ) : esBot ? (
         <span className="fw-bold text-truncate mw-100 px-2">🤖 {nombre} está jugando…</span>
       ) : (
         <>
           <span className="small">Turno de</span>
           <span className="fw-bold text-truncate mw-100 px-2">{nombre ?? '—'}</span>
+          {fase && <span className="small text-truncate mw-100 px-2">{fase}</span>}
         </>
       )}
     </div>

@@ -1,5 +1,4 @@
-//* Lo que devuelve cada accion de la sala. Si hay error, `mensaje` es lo que se
-//* le avisa al jugador; si no, la accion ya hizo su trabajo y sus logs.
+//* Resultado de una accion: si hay error, `mensaje` se le avisa al jugador
 export type ResultadoAccion = {
     error: boolean,
     mensaje: string

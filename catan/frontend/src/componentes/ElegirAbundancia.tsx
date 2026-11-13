@@ -12,9 +12,6 @@ import Select from '@mui/material/Select';
 import Stack from '@mui/material/Stack';
 import { RECURSOS, type Recurso, type Recursos } from '../common/jugador';
 
-/* Mismo diseno que intercambioBanca.tsx (Dialog con dos Select), pero los dos
-   son recursos que se reciben gratis de la banca. Se puede pedir el mismo
-   recurso dos veces si la banca tiene al menos 2. */
 
 interface Props {
   abierto: boolean;

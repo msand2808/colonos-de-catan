@@ -1,8 +1,7 @@
 import Alert from '@mui/material/Alert';
 import Snackbar from '@mui/material/Snackbar';
 
-/* Aviso de error del servidor. Reemplaza al alert() del navegador para no
-   bloquear la pagina; se cierra solo despues de unos segundos. */
+/* Aviso de error del servidor; se cierra solo a los segundos */
 
 export interface Aviso {
   id: number;

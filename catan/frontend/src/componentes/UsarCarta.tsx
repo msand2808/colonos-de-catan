@@ -2,8 +2,7 @@ import { Button, Dialog, DialogActions, DialogContent, DialogTitle, Stack, Typog
 import type { Cartas } from "../common/jugador";
 import { CARTA, NOMBRE_CARTA } from "../common/jugador";
 
-// Las 4 cartas que se pueden jugar. El punto de victoria no esta porque su
-// efecto es inmediato.
+// Las 4 cartas jugables; el punto de victoria no esta porque se aplica solo
 export type CartaUsable = typeof CARTA.CABALLERO | typeof CARTA.CARRETERAS
   | typeof CARTA.ABUNDANCIA | typeof CARTA.MONOPOLIO;
 
@@ -14,8 +13,7 @@ const CARTAS_USABLES: { clave: CartaUsable; icono: string; efecto: string }[] = 
     { clave: CARTA.MONOPOLIO,  icono: '/svg/monopolio.svg',  efecto: 'Los demás te dan todo de un recurso.' },
 ];
 
-/* Cartas que ya se pueden jugar desde este menu. Las demas se muestran pero
-   quedan desactivadas: su uso es parte de otras issues. */
+/* Cartas que ya se pueden jugar; las demas se ven desactivadas */
 const CARTAS_IMPLEMENTADAS: CartaUsable[] = [CARTA.CABALLERO, CARTA.CARRETERAS, CARTA.ABUNDANCIA, CARTA.MONOPOLIO];
 
 interface Props {
@@ -30,10 +28,8 @@ interface Props {
 function UsarCarta({ abierto, cartasUsables, onElegir, onCerrar }: Props) {
     return (
         <Dialog open={abierto} onClose={onCerrar} fullWidth maxWidth="xs" aria-labelledby="usar-carta-titulo">
-            {/*Titulo del modal*/}
             <DialogTitle id="usar-carta-titulo">¿Qué carta quieres usar?</DialogTitle>
 
-            {/*Cuerpo del modal*/}
             <DialogContent>
                 <Typography color="text.secondary">
                     Solo puedes usar una carta por turno.

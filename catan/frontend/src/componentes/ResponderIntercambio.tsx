@@ -16,13 +16,12 @@ interface Props {
 //* Se muestra a los jugadores que todavia no respondieron la propuesta activa
 
 function ResponderIntercambio({ oferta, nombreOferente, misRecursos, enviando, onResponder }: Props) {
-    /* Sin lo que se pide, aceptar no sirve: el backend lo cambia a "no". Por eso
-       en ese caso solo se deja rechazar. */
+    // Si no tengo lo que piden, el backend lo cambia a "no": solo se deja rechazar
     const tengo = misRecursos?.[oferta.recursoSolicitado as Recurso] ?? 0;
     const alcanza = tengo >= oferta.cantidadSolicitada;
 
     return (
-        <div className="h-100 w-100 d-flex flex-column border rounded bg-white overflow-hidden">
+        <div className="h-100 w-100 d-flex flex-column border rounded bg-body overflow-hidden">
             <h3 className="text-center fs-6 fw-bold border-bottom mb-0 py-1">Negociar</h3>
 
             <div className="flex-fill d-flex flex-column justify-content-center gap-2 p-2 text-center">

@@ -13,8 +13,7 @@ const ANA = "ana";
 const BETO = "beto";
 const CARLA = "carla";
 
-//* Las 6 aristas alrededor del hexagono h,d en orden, asi cualquier tramo
-//* seguido del arreglo es un camino continuo
+//* Las 6 aristas alrededor del hexagono h,d en orden: cualquier tramo seguido es continuo
 function anillo(h: number, d: number) {
     return [`${h},${d},1`, `${h},${d},2`, `${h - 1},${d + 1},0`, `${h},${d + 1},1`, `${h + 1},${d},2`, `${h},${d},0`];
 }
@@ -45,7 +44,6 @@ describe("actualizarCaminoMasLargo", () => {
         partida = new Partida();
     });
 
-    //* Helpers para preparar el tablero
     function construirCaminos(sessionId: string, cantidad: number) {
         const [h, d] = HEXAGONO[sessionId];
         anillo(h, d).slice(0, cantidad).forEach((clave) => aristas.get(clave).setPropietario(sessionId));

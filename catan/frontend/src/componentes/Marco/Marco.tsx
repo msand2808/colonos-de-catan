@@ -13,8 +13,7 @@ interface MarcoProps {
   decoracion?: boolean;
 }
 
-// Marco común de las pantallas previas a la partida: mar de fondo con grano
-// sutil, recursos flotando y barra superior con la marca y el botón Volver.
+// Marco de las pantallas previas a la partida: mar, recursos flotando y barra superior
 function Marco({ children, onVolver, etiquetaVolver = "Volver", ancho = "ancho", decoracion = true }: MarcoProps) {
   return (
     <div className="tema-fondo marco">

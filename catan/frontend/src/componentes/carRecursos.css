@@ -1,0 +1,13 @@
+/* La carta da un saltito cuando cambia su cantidad: solo transform. */
+.crRebote {
+  animation: crRebote 0.4s ease-out;
+}
+
+@keyframes crRebote {
+  0%, 100% { transform: translateY(0) scale(1); }
+  40%      { transform: translateY(-6px) scale(1.08); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .crRebote { animation: none; }
+}
