@@ -1,2 +1,34 @@
 /* La aplicación usa toda el área disponible del navegador. */
 html, body, #root {  width: 100%; height: 100%; margin: 0;}
+
+/* Foco visible para quien usa el teclado. Va con :where para no ganarle a los
+   componentes que ya tienen su propio foco (tema-btn, tema-volver, fichas...).
+   El color cambia con el tema para que se vea sobre fondos claros y oscuros. */
+:root { --foco: #1b4e8f; }
+:root[data-theme="oscuro"] { --foco: #ffd54a; }
+
+:where(a, button, input, select, textarea, summary, [tabindex]):focus-visible {
+  outline: 3px solid var(--foco);
+  outline-offset: 2px;
+}
+
+/* MUI quita el contorno y deja solo una onda suave; se le agrega el mismo foco */
+.Mui-focusVisible {
+  outline: 3px solid var(--foco) !important;
+  outline-offset: 2px;
+}
+
+/* Si el sistema pide reducir el movimiento no se anima nada, tampoco en la
+   partida ni en los componentes de MUI. Las animaciones duran casi cero en
+   vez de quitarse, para que se vea el estado final y sigan llegando los
+   eventos animationend y transitionend que usan algunos componentes. */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}

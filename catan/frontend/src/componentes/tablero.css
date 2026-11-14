@@ -107,6 +107,13 @@
 :root[data-theme="oscuro"] .tbMuelle { stroke: #cbb083; }
 :root[data-theme="oscuro"] .tbObjetivoConstruccion { stroke: #7fd0dc; }
 :root[data-theme="oscuro"] .tbObjetivoLadron { stroke: #7fd0dc; }
+
+/* Foco con teclado: en SVG el contorno no se ve bien, asi que se engrosa la
+   linea con el color de foco (--foco de index.css). Va despues del modo
+   oscuro y con :root para ganarle en los dos temas. */
+:root .tbObjetivoConstruccion:focus-visible { stroke: var(--foco); stroke-width: 16; }
+:root .tbObjetivoLadron:focus-visible { stroke: var(--foco); stroke-width: 7; }
+
 /* Hexagonos que producen con la tirada: pulso dorado encima del terreno */
 .tbHexProduce {
     fill: #FFD54A;

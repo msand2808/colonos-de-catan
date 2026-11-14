@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { COLORES, colorDeJugador, coloresParaElegir } from './jugador';
+import { CONTRASTE_MINIMO, contraste } from './contraste';
 
 const ANA = 'ana';
 const BETO = 'beto';
@@ -44,5 +45,16 @@ describe('coloresParaElegir', () => {
 
     expect(coloresParaElegir(conUnoSinColor, BETO).map((opcion) => opcion.estado))
       .toEqual(['ocupado', 'mio', 'libre', 'libre']);
+  });
+});
+
+//* El nombre y los puntos van en blanco sobre el color del jugador (panel, turno y podio)
+describe('paleta de colores de jugador', () => {
+  it.each(COLORES)('el texto blanco se lee sobre %s', (color) => {
+    expect(contraste(color, '#ffffff')).toBeGreaterThanOrEqual(CONTRASTE_MINIMO);
+  });
+
+  it('tiene un color distinto para cada uno de los 4 lugares de la sala', () => {
+    expect(new Set(COLORES).size).toBe(4);
   });
 });

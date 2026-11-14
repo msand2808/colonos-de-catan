@@ -64,7 +64,7 @@
   --tinta: #f3e8d2;
   --tinta-suave: #cdbb97;
 
-  --teal: #1f8a9b;
+  --teal: #1a7a8a;
   --pizarra: #d6e2e7;
 
   --rojo-ficha: #f08a80;
@@ -206,12 +206,12 @@
 }
 
 .tema-btn--ladrillo {
-  --btn-fondo: var(--ladrillo);
+  --btn-fondo: #b0502f; /* un poco mas oscuro que --ladrillo para que el texto blanco se lea */
   --btn-borde: var(--ladrillo-oscuro);
 }
 
 .tema-btn--bosque {
-  --btn-fondo: #3f8a4f;
+  --btn-fondo: #347d44;
   --btn-borde: #245232;
 }
 
