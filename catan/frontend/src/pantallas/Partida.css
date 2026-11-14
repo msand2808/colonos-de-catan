@@ -48,3 +48,37 @@
 :root[data-theme="oscuro"] .tablero {
     border-color: #2b3035;
 }
+
+/* Pantallas angostas (celular): la rejilla de 6 columnas no cabe, asi que los
+   paneles se apilan en dos columnas y la pagina se desplaza hacia abajo.
+   Primero lo que se usa en cada turno: jugadores, tablero, dados y fin de turno. */
+@media (max-width: 768px) {
+    .marcoPartida {
+        height: auto;
+        min-height: 100%;
+        overflow: visible;
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        grid-template-rows: none;
+        grid-auto-rows: auto;
+        padding: 6px;
+    }
+    /* Todos ocupan el ancho completo; los de media columna se marcan abajo.
+       Van con ".marcoPartida >" para ganarle a esta regla. */
+    .marcoPartida > div {
+        grid-area: auto;
+        grid-column: 1 / -1;
+        min-height: 3rem;
+    }
+    .marcoPartida > .infoJugadores { order: 1; }
+    .marcoPartida > .tablero { order: 2; aspect-ratio: 1 / 1; border-width: 3px; }
+    .marcoPartida > .tirDado { order: 3; grid-column: span 1; min-height: 7rem; }
+    .marcoPartida > .finTurno { order: 4; grid-column: span 1; }
+    .marcoPartida > .carRecursos { order: 5; }
+    .marcoPartida > .construir { order: 6; }
+    .marcoPartida > .carDesarrollo { order: 7; grid-column: span 1; }
+    .marcoPartida > .negociar { order: 8; grid-column: span 1; }
+    .marcoPartida > .existencias { order: 9; }
+    .marcoPartida > .tabCostos { order: 10; }
+    .marcoPartida > .chat { order: 11; height: 18rem; }
+    .marcoPartida > .salir { order: 12; }
+}
