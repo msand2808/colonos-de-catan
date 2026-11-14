@@ -2,7 +2,7 @@ import type { Jugadores } from '../common/jugador';
 import { totalCartas, totalRecursos, enRiesgoDeDescarte, colorDeJugador } from '../common/jugador';
 import type { DatosPartida } from '../common/partida';
 import { infoCaminoMasLargo } from '../common/caminoMasLargo';
-import { metaDePuntos, porcentajeProgreso } from '../common/progreso';
+import { metaDePuntos, porcentajeProgreso, puntosOcultos } from '../common/progreso';
 import './infoJugadores.css';
 
 interface Props {
@@ -48,6 +48,8 @@ function InfoJugadores({ jugadores, ordenJugadores, miSessionId, turnoActual, ej
         const camino = infoCaminoMasLargo(partida, id);
         const meta = metaDePuntos(j);
         const progreso = porcentajeProgreso(j.puntuacion, meta);
+        // Las cartas de victoria son secretas: solo se ven en mi panel
+        const ocultos = yo ? puntosOcultos(j) : 0;
 
         return (
           <div
@@ -62,7 +64,12 @@ function InfoJugadores({ jugadores, ordenJugadores, miSessionId, turnoActual, ej
               <span className="ijNombre">
                 {yo && '(Yo) '}{j.esBot && <span title="Bot">🤖 </span>}{j.nombre}
               </span>
-              <span className="ijPuntos">{j.puntuacion}/{meta}</span>
+              <span className="ijPuntos">
+                {j.puntuacion}/{meta}
+                {ocultos > 0 && (
+                  <span title="Puntos de tus cartas de victoria: solo los ves tú"> (+{ocultos})</span>
+                )}
+              </span>
             </div>
 
             <div
